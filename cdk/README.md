@@ -1,14 +1,14 @@
-# Welcome to your CDK TypeScript project
+# CDK
 
-This is a blank project for CDK development with TypeScript.
+これは TypeScript で CDK 開発を行うための空のプロジェクトです。
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+`cdk.json` ファイルは、CDK Toolkit にアプリの実行方法を指示します。
 
-## Useful commands
+## よく使うコマンド
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
+* `npm run build`   TypeScript を JS にコンパイル
+* `npm run watch`   変更を監視して自動コンパイル
+* `npm run test`    jest ユニットテストを実行
+* `npx cdk deploy`  このスタックをデフォルトの AWS アカウント/リージョンにデプロイ
+* `npx cdk diff`    デプロイ済みスタックと現在の状態を比較
+* `npx cdk synth`   合成された CloudFormation テンプレートを出力
