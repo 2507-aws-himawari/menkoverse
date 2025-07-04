@@ -11,7 +11,7 @@
     "cdk": "cdk",
     "sam-translate": "AWS_DEFAULT_REGION=us-east-1 python sam-translate.py --template-file=sam-template.yaml --output-template=template.json",
     "codegen": "node -e \"const [cdkfromcfn, fs] = [require('cdk-from-cfn'), require('fs')]; fs.writeFileSync(process.argv[2], cdkfromcfn.transmute(fs.readFileSync(process.argv[1]).toString(), 'typescript', 'MyStack'));\"",
-    "codegen-mode": "nodemon --ignore .aws-composer --ignore template.json --exec \"npm run sam-translate && npm run codegen ./template.json ./lib/application-composer-cdk-stack.ts\" ./sam-template.yaml"
+    "codegen-mode": "nodemon --ignore .aws-composer --ignore template.json --exec \"npm run sam-translate && npm run codegen ./template.json ./lib/cdk-stack.ts\" ./sam-template.yaml"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
