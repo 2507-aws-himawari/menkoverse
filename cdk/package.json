@@ -8,14 +8,19 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "sam-translate": "AWS_DEFAULT_REGION=us-east-1 python sam-translate.py --template-file=sam-template.yaml --output-template=template.json",
+    "codegen": "node -e \"const [cdkfromcfn, fs] = [require('cdk-from-cfn'), require('fs')]; fs.writeFileSync(process.argv[2], cdkfromcfn.transmute(fs.readFileSync(process.argv[1]).toString(), 'typescript', 'MyStack'));\"",
+    "codegen-mode": "nodemon --ignore .aws-composer --ignore template.json --exec \"npm run sam-translate && npm run codegen ./template.json ./lib/application-composer-cdk-stack.ts\" ./sam-template.yaml"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.2.5",
     "aws-cdk": "2.1017.1",
+    "cdk-from-cfn": "^0.228.0",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.10",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "~5.6.3"
   },
