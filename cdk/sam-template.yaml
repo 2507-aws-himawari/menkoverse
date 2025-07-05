@@ -1,0 +1,9 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  DummyParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /dummy/placeholder
+      Value: placeholder
+      Type: String
+Transform: AWS::Serverless-2016-10-31
