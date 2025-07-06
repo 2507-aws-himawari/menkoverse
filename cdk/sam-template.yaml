@@ -6,6 +6,12 @@ Parameters:
     Type: String
     Description: Callback URL for OAuth
     Default: http://localhost:3000/api/auth/callback/cognito
+  DomainPrefix:
+    Type: String
+    Description: Domain prefix for Cognito hosted UI
+    Default: menkoverse-dev
+    AllowedPattern: ^[a-z0-9-]+$
+    ConstraintDescription: Must contain only lowercase letters, numbers, and hyphens
 
 Resources:
   UserPool:
@@ -14,6 +20,14 @@ Resources:
       UserPoolName: MenkoverseUserPool
       AutoVerifiedAttributes:
         - email
+      UsernameAttributes:
+        - email
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailMessage: 'Your Menkoverse verification code is {####}'
+        EmailSubject: 'Verify your Menkoverse account'
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -37,6 +51,7 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
       CallbackURLs:
         - !Ref CallbackUrl
+        - !Sub https://${DomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/idpresponse
       SupportedIdentityProviders:
         - COGNITO
 
@@ -74,6 +89,14 @@ Resources:
       Name: /dummy/placeholder
       Value: placeholder
       Type: String
+
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref DomainPrefix
+      UserPoolId: !Ref UserPool
+    DependsOn: UserPoolClient
+
   IdentityPool:
     Type: AWS::Cognito::IdentityPool
     Properties:
@@ -114,3 +137,15 @@ Outputs:
     Value: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
     Export:
       Name: !Sub ${AWS::StackName}-CognitoIssuer
+
+  UserPoolDomain:
+    Description: Cognito User Pool Domain
+    Value: !Ref UserPoolDomain
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolDomain
+
+  HostedUIUrl:
+    Description: Cognito Hosted UI URL
+    Value: !Sub https://${DomainPrefix}.auth.${AWS::Region}.amazoncognito.com
+    Export:
+      Name: !Sub ${AWS::StackName}-HostedUIUrl
