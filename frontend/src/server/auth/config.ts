@@ -3,7 +3,7 @@ import type { DefaultSession, NextAuthConfig } from "next-auth";
 import Cognito from "next-auth/providers/cognito";
 
 import { db } from "@/server/db";
-import { env } from "node:process";
+import { env } from "@/env";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
