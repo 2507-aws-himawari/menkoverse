@@ -1,7 +1,9 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { DefaultSession, NextAuthConfig } from "next-auth";
+import Cognito from "next-auth/providers/cognito";
 
 import { db } from "@/server/db";
+import { env } from "node:process";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -31,6 +33,11 @@ declare module "next-auth" {
  */
 export const authConfig = {
 	providers: [
+		Cognito({
+			clientId: env.AUTH_COGNITO_CLIENT_ID,
+			clientSecret: env.AUTH_COGNITO_CLIENT_SECRET,
+			issuer: env.AUTH_COGNITO_ISSUER,
+		}),
 		/**
 		 * ...add more providers here.
 		 *
