@@ -20,8 +20,18 @@ Resources:
       UserPoolName: MenkoverseUserPool
       AutoVerifiedAttributes:
         - email
-      UsernameAttributes:
+      AliasAttributes:
         - email
+        - preferred_username
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: preferred_username
+          AttributeDataType: String
+          Required: false
+          Mutable: true
       VerificationMessageTemplate:
         DefaultEmailOption: CONFIRM_WITH_CODE
         EmailMessage: 'Your Menkoverse verification code is {####}'

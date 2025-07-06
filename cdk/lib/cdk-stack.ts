@@ -64,8 +64,23 @@ export class CdkStack extends cdk.Stack {
       autoVerifiedAttributes: [
         'email',
       ],
-      usernameAttributes: [
+      aliasAttributes: [
         'email',
+        'preferred_username',
+      ],
+      schema: [
+        {
+          name: 'email',
+          attributeDataType: 'String',
+          required: true,
+          mutable: true,
+        },
+        {
+          name: 'preferred_username',
+          attributeDataType: 'String',
+          required: false,
+          mutable: true,
+        },
       ],
       verificationMessageTemplate: {
         defaultEmailOption: 'CONFIRM_WITH_CODE',
