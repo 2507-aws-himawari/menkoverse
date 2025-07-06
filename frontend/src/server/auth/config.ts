@@ -37,6 +37,7 @@ export const authConfig = {
 			clientId: env.AUTH_COGNITO_CLIENT_ID,
 			clientSecret: env.AUTH_COGNITO_CLIENT_SECRET,
 			issuer: env.AUTH_COGNITO_ISSUER,
+			allowDangerousEmailAccountLinking: true,
 		}),
 		/**
 		 * ...add more providers here.
