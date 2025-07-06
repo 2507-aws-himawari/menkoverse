@@ -9,6 +9,11 @@ export interface CdkStackProps extends cdk.StackProps {
    * @default 'http://localhost:3000/api/auth/callback/cognito'
    */
   readonly callbackUrl?: string;
+  /**
+   * Domain prefix for Cognito hosted UI
+   * @default 'menkoverse-dev'
+   */
+  readonly domainPrefix?: string;
 }
 
 export class CdkStack extends cdk.Stack {
@@ -28,6 +33,14 @@ export class CdkStack extends cdk.Stack {
    * Cognito Issuer URL for auth.js
    */
   public readonly cognitoIssuer;
+  /**
+   * Cognito User Pool Domain
+   */
+  public readonly userPoolDomain;
+  /**
+   * Cognito Hosted UI URL
+   */
+  public readonly hostedUiUrl;
 
   public constructor(scope: cdk.App, id: string, props: CdkStackProps = {}) {
     super(scope, id, props);
@@ -36,6 +49,7 @@ export class CdkStack extends cdk.Stack {
     props = {
       ...props,
       callbackUrl: props.callbackUrl ?? 'http://localhost:3000/api/auth/callback/cognito',
+      domainPrefix: props.domainPrefix ?? 'menkoverse-dev',
     };
 
     // Resources
@@ -50,6 +64,17 @@ export class CdkStack extends cdk.Stack {
       autoVerifiedAttributes: [
         'email',
       ],
+      usernameAttributes: [
+        'email',
+      ],
+      verificationMessageTemplate: {
+        defaultEmailOption: 'CONFIRM_WITH_CODE',
+        emailMessage: 'Your Menkoverse verification code is {####}',
+        emailSubject: 'Verify your Menkoverse account',
+      },
+      emailConfiguration: {
+        emailSendingAccount: 'COGNITO_DEFAULT',
+      },
       policies: {
         passwordPolicy: {
           minimumLength: 8,
@@ -76,6 +101,7 @@ export class CdkStack extends cdk.Stack {
       allowedOAuthFlowsUserPoolClient: true,
       callbackUrLs: [
         props.callbackUrl!,
+        `https://${props.domainPrefix!}.auth.${this.region}.amazoncognito.com/oauth2/idpresponse`,
       ],
       supportedIdentityProviders: [
         'COGNITO',
@@ -92,6 +118,12 @@ export class CdkStack extends cdk.Stack {
         },
       ],
     });
+
+    const userPoolDomain = new cognito.CfnUserPoolDomain(this, 'UserPoolDomain', {
+      domain: props.domainPrefix!,
+      userPoolId: userPool.ref,
+    });
+    userPoolDomain.addDependency(userPoolClient);
 
     const cognitoAuthenticatedRole = new iam.CfnRole(this, 'CognitoAuthenticatedRole', {
       roleName: 'Cognito_MenkoverseAuth_Role',
@@ -171,6 +203,20 @@ export class CdkStack extends cdk.Stack {
       description: 'Cognito Issuer URL for auth.js',
       exportName: `${this.stackName}-CognitoIssuer`,
       value: this.cognitoIssuer!.toString(),
+    });
+    this.userPoolDomain = userPoolDomain.ref;
+    new cdk.CfnOutput(this, 'CfnOutputUserPoolDomain', {
+      key: 'UserPoolDomain',
+      description: 'Cognito User Pool Domain',
+      exportName: `${this.stackName}-UserPoolDomain`,
+      value: this.userPoolDomain!.toString(),
+    });
+    this.hostedUiUrl = `https://${props.domainPrefix!}.auth.${this.region}.amazoncognito.com`;
+    new cdk.CfnOutput(this, 'CfnOutputHostedUIUrl', {
+      key: 'HostedUIUrl',
+      description: 'Cognito Hosted UI URL',
+      exportName: `${this.stackName}-HostedUIUrl`,
+      value: this.hostedUiUrl!.toString(),
     });
   }
 }

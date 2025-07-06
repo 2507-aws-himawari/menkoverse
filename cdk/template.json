@@ -5,6 +5,13 @@
    "Type": "String",
    "Description": "Callback URL for OAuth",
    "Default": "http://localhost:3000/api/auth/callback/cognito"
+  },
+  "DomainPrefix": {
+   "Type": "String",
+   "Description": "Domain prefix for Cognito hosted UI",
+   "Default": "menkoverse-dev",
+   "AllowedPattern": "^[a-z0-9-]+$",
+   "ConstraintDescription": "Must contain only lowercase letters, numbers, and hyphens"
   }
  },
  "Resources": {
@@ -15,6 +22,17 @@
     "AutoVerifiedAttributes": [
      "email"
     ],
+    "UsernameAttributes": [
+     "email"
+    ],
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_CODE",
+     "EmailMessage": "Your Menkoverse verification code is {####}",
+     "EmailSubject": "Verify your Menkoverse account"
+    },
+    "EmailConfiguration": {
+     "EmailSendingAccount": "COGNITO_DEFAULT"
+    },
     "Policies": {
      "PasswordPolicy": {
       "MinimumLength": 8,
@@ -46,6 +64,9 @@
     "CallbackURLs": [
      {
       "Ref": "CallbackUrl"
+     },
+     {
+      "Fn::Sub": "https://${DomainPrefix}.auth.${AWS::Region}.amazoncognito.com/oauth2/idpresponse"
      }
     ],
     "SupportedIdentityProviders": [
@@ -107,6 +128,18 @@
     "Value": "placeholder",
     "Type": "String"
    }
+  },
+  "UserPoolDomain": {
+   "Type": "AWS::Cognito::UserPoolDomain",
+   "Properties": {
+    "Domain": {
+     "Ref": "DomainPrefix"
+    },
+    "UserPoolId": {
+     "Ref": "UserPool"
+    }
+   },
+   "DependsOn": "UserPoolClient"
   },
   "IdentityPool": {
    "Type": "AWS::Cognito::IdentityPool",
@@ -187,6 +220,28 @@
    "Export": {
     "Name": {
      "Fn::Sub": "${AWS::StackName}-CognitoIssuer"
+    }
+   }
+  },
+  "UserPoolDomain": {
+   "Description": "Cognito User Pool Domain",
+   "Value": {
+    "Ref": "UserPoolDomain"
+   },
+   "Export": {
+    "Name": {
+     "Fn::Sub": "${AWS::StackName}-UserPoolDomain"
+    }
+   }
+  },
+  "HostedUIUrl": {
+   "Description": "Cognito Hosted UI URL",
+   "Value": {
+    "Fn::Sub": "https://${DomainPrefix}.auth.${AWS::Region}.amazoncognito.com"
+   },
+   "Export": {
+    "Name": {
+     "Fn::Sub": "${AWS::StackName}-HostedUIUrl"
     }
    }
   }
