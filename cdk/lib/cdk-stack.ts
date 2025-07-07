@@ -264,7 +264,7 @@ export class CdkStack extends cdk.Stack {
       }),
       credentials: rds.Credentials.fromSecret(dbCredentialsSecret),
       writer: rds.ClusterInstance.provisioned('writer', {
-        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM),
+        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL),
         publiclyAccessible: false,
       }),
       vpcSubnets: {
@@ -342,8 +342,8 @@ export class CdkStack extends cdk.Stack {
       },
       instanceConfiguration: {
         instanceRoleArn: appRunnerInstanceRole.roleArn,
-        cpu: '1024',
-        memory: '2048',
+        cpu: '512',
+        memory: '1024',
       },
     });
 
