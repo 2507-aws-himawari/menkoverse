@@ -6,6 +6,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as apprunner from 'aws-cdk-lib/aws-apprunner';
+import * as budgets from 'aws-cdk-lib/aws-budgets';
 
 export interface CdkStackProps extends cdk.StackProps {
   /**
@@ -349,6 +350,53 @@ export class CdkStack extends cdk.Stack {
 
     // Make sure VPC connector is created before App Runner service
     this.appRunnerService.addDependency(vpcConnector);
+
+    // Cost monitoring budget
+    const costBudget = new budgets.CfnBudget(this, 'MenkoverseCostBudget', {
+      budget: {
+        budgetName: 'Menkoverse-Monthly-Budget',
+        budgetLimit: {
+          amount: 50, // $150/month budget
+          unit: 'USD',
+        },
+        timeUnit: 'MONTHLY',
+        budgetType: 'COST',
+        costFilters: {
+          'TagKey': [`aws:cloudformation:stack-name`],
+          'TagValue': [this.stackName],
+        },
+      },
+      notificationsWithSubscribers: [
+        {
+          notification: {
+            notificationType: 'ACTUAL',
+            comparisonOperator: 'GREATER_THAN',
+            threshold: 80, // Alert at 80% of budget
+            thresholdType: 'PERCENTAGE',
+          },
+          subscribers: [
+            {
+              subscriptionType: 'EMAIL',
+              address: 'admin@menkoverse.com', // Replace with actual email
+            },
+          ],
+        },
+        {
+          notification: {
+            notificationType: 'FORECASTED',
+            comparisonOperator: 'GREATER_THAN',
+            threshold: 100, // Alert when forecasted to exceed budget
+            thresholdType: 'PERCENTAGE',
+          },
+          subscribers: [
+            {
+              subscriptionType: 'EMAIL',
+              address: 'admin@menkoverse.com', // Replace with actual email
+            },
+          ],
+        },
+      ],
+    });
 
     // Outputs
     this.userPoolId = userPool.ref;
