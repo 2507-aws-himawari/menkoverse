@@ -2,6 +2,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as rds from 'aws-cdk-lib/aws-rds';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as apprunner from 'aws-cdk-lib/aws-apprunner';
 
 export interface CdkStackProps extends cdk.StackProps {
   /**
@@ -14,6 +18,16 @@ export interface CdkStackProps extends cdk.StackProps {
    * @default 'menkoverse-dev'
    */
   readonly domainPrefix?: string;
+  /**
+   * GitHub repository URL for App Runner
+   * @default 'https://github.com/your-org/menkoverse'
+   */
+  readonly repositoryUrl?: string;
+  /**
+   * GitHub branch for App Runner
+   * @default 'main'
+   */
+  readonly branch?: string;
 }
 
 export class CdkStack extends cdk.Stack {
@@ -41,6 +55,18 @@ export class CdkStack extends cdk.Stack {
    * Cognito Hosted UI URL
    */
   public readonly hostedUiUrl;
+  /**
+   * RDS Database Cluster
+   */
+  public readonly databaseCluster: rds.DatabaseCluster;
+  /**
+   * App Runner Service
+   */
+  public readonly appRunnerService: apprunner.CfnService;
+  /**
+   * VPC
+   */
+  public readonly vpc: ec2.Vpc;
 
   public constructor(scope: cdk.App, id: string, props: CdkStackProps = {}) {
     super(scope, id, props);
@@ -50,6 +76,8 @@ export class CdkStack extends cdk.Stack {
       ...props,
       callbackUrl: props.callbackUrl ?? 'http://localhost:3000/api/auth/callback/cognito',
       domainPrefix: props.domainPrefix ?? 'menkoverse-dev',
+      repositoryUrl: props.repositoryUrl ?? 'https://github.com/your-org/menkoverse',
+      branch: props.branch ?? 'main',
     };
 
     // Resources
@@ -175,6 +203,128 @@ export class CdkStack extends cdk.Stack {
       },
     });
 
+    // VPC for RDS and App Runner
+    this.vpc = new ec2.Vpc(this, 'MenkoverseVpc', {
+      maxAzs: 2,
+      natGateways: 1,
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'Public',
+          subnetType: ec2.SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 24,
+          name: 'Private',
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+        },
+      ],
+    });
+
+    // Security Group for RDS
+    const rdsSecurityGroup = new ec2.SecurityGroup(this, 'RdsSecurityGroup', {
+      vpc: this.vpc,
+      description: 'Security group for RDS PostgreSQL',
+      allowAllOutbound: false,
+    });
+
+    // Security Group for App Runner VPC Connector
+    const appRunnerSecurityGroup = new ec2.SecurityGroup(this, 'AppRunnerSecurityGroup', {
+      vpc: this.vpc,
+      description: 'Security group for App Runner VPC Connector',
+      allowAllOutbound: true,
+    });
+
+    // Allow App Runner to connect to RDS
+    rdsSecurityGroup.addIngressRule(
+      appRunnerSecurityGroup,
+      ec2.Port.tcp(5432),
+      'Allow App Runner to connect to PostgreSQL'
+    );
+
+    // Database credentials secret
+    const dbCredentialsSecret = new secretsmanager.Secret(this, 'DbCredentials', {
+      description: 'RDS PostgreSQL credentials',
+      generateSecretString: {
+        secretStringTemplate: JSON.stringify({ username: 'postgres' }),
+        generateStringKey: 'password',
+        excludeCharacters: '"@/\\',
+      },
+    });
+
+    // RDS Aurora PostgreSQL Cluster
+    this.databaseCluster = new rds.DatabaseCluster(this, 'Database', {
+      engine: rds.DatabaseClusterEngine.auroraPostgres({
+        version: rds.AuroraPostgresEngineVersion.VER_15_4,
+      }),
+      credentials: rds.Credentials.fromSecret(dbCredentialsSecret),
+      writer: rds.ClusterInstance.provisioned('writer', {
+        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MEDIUM),
+        publiclyAccessible: false,
+      }),
+      vpcSubnets: {
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      },
+      vpc: this.vpc,
+      securityGroups: [rdsSecurityGroup],
+      defaultDatabaseName: 'menkoverse',
+      backup: {
+        retention: cdk.Duration.days(7),
+      },
+    });
+
+    // VPC Connector for App Runner
+    const vpcConnector = new apprunner.CfnVpcConnector(this, 'VpcConnector', {
+      subnets: this.vpc.selectSubnets({
+        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+      }).subnetIds,
+      securityGroups: [appRunnerSecurityGroup.securityGroupId],
+      vpcConnectorName: 'menkoverse-vpc-connector',
+    });
+
+    // App Runner Instance Role
+    const appRunnerInstanceRole = new iam.Role(this, 'AppRunnerInstanceRole', {
+      assumedBy: new iam.ServicePrincipal('tasks.apprunner.amazonaws.com'),
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSAppRunnerServicePolicyForECRAccess'),
+      ],
+    });
+
+    // Grant App Runner access to secrets
+    dbCredentialsSecret.grantRead(appRunnerInstanceRole);
+
+    // App Runner Service
+    this.appRunnerService = new apprunner.CfnService(this, 'AppRunnerService', {
+      serviceName: 'menkoverse-app',
+      sourceConfiguration: {
+        autoDeploymentsEnabled: true,
+        codeRepository: {
+          repositoryUrl: props.repositoryUrl!,
+          sourceCodeVersion: {
+            type: 'BRANCH',
+            value: props.branch!,
+          },
+          codeConfiguration: {
+            configurationSource: 'REPOSITORY',
+          },
+        },
+      },
+      networkConfiguration: {
+        egressConfiguration: {
+          egressType: 'VPC',
+          vpcConnectorArn: vpcConnector.attrVpcConnectorArn,
+        },
+      },
+      instanceConfiguration: {
+        instanceRoleArn: appRunnerInstanceRole.roleArn,
+        cpu: '1024',
+        memory: '2048',
+      },
+    });
+
+    // Make sure VPC connector is created before App Runner service
+    this.appRunnerService.addDependency(vpcConnector);
+
     // Outputs
     this.userPoolId = userPool.ref;
     new cdk.CfnOutput(this, 'CfnOutputUserPoolId', {
@@ -217,6 +367,50 @@ export class CdkStack extends cdk.Stack {
       description: 'Cognito Hosted UI URL',
       exportName: `${this.stackName}-HostedUIUrl`,
       value: this.hostedUiUrl!.toString(),
+    });
+
+    // Database outputs
+    new cdk.CfnOutput(this, 'CfnOutputDatabaseClusterEndpoint', {
+      key: 'DatabaseClusterEndpoint',
+      description: 'RDS Aurora PostgreSQL Cluster Endpoint',
+      exportName: `${this.stackName}-DatabaseClusterEndpoint`,
+      value: this.databaseCluster.clusterEndpoint.hostname,
+    });
+
+    new cdk.CfnOutput(this, 'CfnOutputDatabaseClusterPort', {
+      key: 'DatabaseClusterPort',
+      description: 'RDS Aurora PostgreSQL Cluster Port',
+      exportName: `${this.stackName}-DatabaseClusterPort`,
+      value: this.databaseCluster.clusterEndpoint.port.toString(),
+    });
+
+    new cdk.CfnOutput(this, 'CfnOutputDatabaseName', {
+      key: 'DatabaseName',
+      description: 'RDS Aurora PostgreSQL Database Name',
+      exportName: `${this.stackName}-DatabaseName`,
+      value: 'menkoverse',
+    });
+
+    new cdk.CfnOutput(this, 'CfnOutputDatabaseCredentialsSecret', {
+      key: 'DatabaseCredentialsSecret',
+      description: 'RDS Database Credentials Secret ARN',
+      exportName: `${this.stackName}-DatabaseCredentialsSecret`,
+      value: dbCredentialsSecret.secretArn,
+    });
+
+    // App Runner outputs
+    new cdk.CfnOutput(this, 'CfnOutputAppRunnerServiceUrl', {
+      key: 'AppRunnerServiceUrl',
+      description: 'App Runner Service URL',
+      exportName: `${this.stackName}-AppRunnerServiceUrl`,
+      value: `https://${this.appRunnerService.attrServiceUrl}`,
+    });
+
+    new cdk.CfnOutput(this, 'CfnOutputAppRunnerServiceId', {
+      key: 'AppRunnerServiceId',
+      description: 'App Runner Service ID',
+      exportName: `${this.stackName}-AppRunnerServiceId`,
+      value: this.appRunnerService.attrServiceId,
     });
   }
 }
