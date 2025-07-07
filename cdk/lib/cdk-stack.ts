@@ -20,7 +20,7 @@ export interface CdkStackProps extends cdk.StackProps {
   readonly domainPrefix?: string;
   /**
    * GitHub repository URL for App Runner
-   * @default 'https://github.com/your-org/menkoverse'
+   * @default 'https://github.com/2507-aws-himawari/menkoverse'
    */
   readonly repositoryUrl?: string;
   /**
@@ -28,6 +28,10 @@ export interface CdkStackProps extends cdk.StackProps {
    * @default 'main'
    */
   readonly branch?: string;
+  /**
+   * Optional connection ARN for App Runner
+   */
+  readonly connectionArn?: string;
 }
 
 export class CdkStack extends cdk.Stack {
@@ -76,8 +80,9 @@ export class CdkStack extends cdk.Stack {
       ...props,
       callbackUrl: props.callbackUrl ?? 'http://localhost:3000/api/auth/callback/cognito',
       domainPrefix: props.domainPrefix ?? 'menkoverse-dev',
-      repositoryUrl: props.repositoryUrl ?? 'https://github.com/your-org/menkoverse',
+      repositoryUrl: props.repositoryUrl ?? 'https://github.com/2507-aws-himawari/menkoverse',
       branch: props.branch ?? 'main',
+      connectionArn: props.connectionArn ?? "arn:aws:apprunner:ap-northeast-1:073825268718:connection/himawari/9372ad1b3cba4a7d84c6798e4450df0f",
     };
 
     // Resources
