@@ -302,6 +302,9 @@ export class CdkStack extends cdk.Stack {
     this.appRunnerService = new apprunner.CfnService(this, 'AppRunnerService', {
       serviceName: 'menkoverse-app',
       sourceConfiguration: {
+        authenticationConfiguration: {
+          connectionArn: props.connectionArn!,
+        },
         autoDeploymentsEnabled: true,
         codeRepository: {
           repositoryUrl: props.repositoryUrl!,
@@ -309,8 +312,25 @@ export class CdkStack extends cdk.Stack {
             type: 'BRANCH',
             value: props.branch!,
           },
+          sourceDirectory: 'frontend',
           codeConfiguration: {
-            configurationSource: 'REPOSITORY',
+            configurationSource: 'API',
+            codeConfigurationValues: {
+              runtime: 'NODEJS_18',
+              buildCommand: "export AUTH_SECRET='dummy' && export DATABASE_URL='dummy' && export AUTH_COGNITO_CLIENT_ID='dummy' && export AUTH_COGNITO_CLIENT_SECRET='dummy' && export AUTH_COGNITO_ISSUER='dummy' && npm ci && npm run build",
+              startCommand: 'npm start',
+              port: '3000',
+              runtimeEnvironmentVariables: [
+                {
+                  name: 'NODE_ENV',
+                  value: 'production',
+                },
+                {
+                  name: 'SKIP_ENV_VALIDATION',
+                  value: 'true',
+                },
+              ],
+            },
           },
         },
       },
