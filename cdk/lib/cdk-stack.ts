@@ -317,7 +317,7 @@ export class CdkStack extends cdk.Stack {
             configurationSource: 'API',
             codeConfigurationValues: {
               runtime: 'NODEJS_18',
-              buildCommand: "export AUTH_SECRET='dummy' && export DATABASE_URL='dummy' && export AUTH_COGNITO_CLIENT_ID='dummy' && export AUTH_COGNITO_CLIENT_SECRET='dummy' && export AUTH_COGNITO_ISSUER='dummy' && npm ci && npm run build",
+              buildCommand: "export AUTH_SECRET='dummy' && export DATABASE_URL='postgresql://dummy:dummy@dummy:5432/dummy' && export AUTH_COGNITO_CLIENT_ID='dummy' && export AUTH_COGNITO_CLIENT_SECRET='dummy' && export AUTH_COGNITO_ISSUER='dummy' && npm ci && npm run build",
               startCommand: 'npm start',
               port: '3000',
               runtimeEnvironmentVariables: [
