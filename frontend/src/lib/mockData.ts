@@ -28,7 +28,7 @@ export const mockUsers: MockUser[] = [
     { id: 'user3', name: 'わんわん', isAdmin: false },
 ];
 
-// ユーザーIDからユーザー情報を取得するヘルパー関数
+// ユーザーIDからユーザー情報を取得する関数
 export const getUserById = (userId: string): MockUser | undefined => {
     return mockUsers.find(user => user.id === userId);
 };
@@ -120,6 +120,11 @@ export const mockApi = {
         };
 
         room.players.push(newPlayer);
+
+        // プレイヤーが2人になったら自動的にplayingステータスに変更
+        if (room.players.length === 2) {
+            room.status = 'playing';
+        }
 
         return newPlayer;
     },

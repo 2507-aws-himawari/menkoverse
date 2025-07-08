@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi, getUserById } from '../../../lib/mockData';
-import { currentRoomAtom, loadingAtom, errorAtom } from '../../../lib/atoms';
+import { mockApi, getUserById } from '../../../../lib/mockData';
+import { currentRoomAtom, loadingAtom, errorAtom } from '../../../../lib/atoms';
 
-export default function RoomPage() {
+export default function RoomStatusPage() {
     const params = useParams();
+    const router = useRouter();
     const rawRoomId = params?.roomId as string;
+    const status = params?.status as string;
     const roomId = rawRoomId ? decodeURIComponent(rawRoomId) : '';
     const [room, setRoom] = useAtom(currentRoomAtom);
     const [loading, setLoading] = useAtom(loadingAtom);
@@ -20,6 +22,11 @@ export default function RoomPage() {
                 setLoading(true);
                 const roomData = await mockApi.getRoom({ roomId });
                 setRoom(roomData);
+
+                // 現在のURLのstatusと部屋の実際のstatusが異なる場合、リダイレクト
+                if (roomData && roomData.status !== status) {
+                    router.replace(`/room/${encodeURIComponent(roomId)}/${roomData.status}`);
+                }
             } catch (err) {
                 setError(err instanceof Error ? err.message : '部屋の取得に失敗しました');
             } finally {
@@ -27,12 +34,12 @@ export default function RoomPage() {
             }
         };
 
-        if (roomId) {
+        if (roomId && status) {
             fetchRoom();
             const interval = setInterval(fetchRoom, 2000);
             return () => clearInterval(interval);
         }
-    }, [roomId]);
+    }, [roomId, status, router]);
 
     if (loading) {
         return (
@@ -50,6 +57,15 @@ export default function RoomPage() {
         );
     }
 
+    // URLのstatusと部屋のstatusが一致しない場合の処理
+    if (room.status !== status) {
+        return (
+            <div>
+                <div>リダイレクト中...</div>
+            </div>
+        );
+    }
+
     return (
         <div>
             <div>
@@ -57,9 +73,11 @@ export default function RoomPage() {
                     <div>
                         <h1>ゲームルーム</h1>
                         <p>あいことば: {room.id}</p>
-                        <p>ステータス: {room.status === 'waiting' ? '待機中' :
-                            room.status === 'playing' ? 'プレイ中' : '終了'}
-                        </p>
+                        <p>ステータス: {
+                            room.status === 'waiting' ? '待機中' :
+                                room.status === 'playing' ? 'プレイ中' :
+                                    room.status === 'finish' ? '終了' : room.status
+                        }</p>
                     </div>
 
                     <div>
@@ -84,7 +102,9 @@ export default function RoomPage() {
                                             </span>
                                         )}
                                         <p>
-                                            待機中...
+                                            {room.status === 'waiting' ? '待機中...' :
+                                                room.status === 'playing' ? 'プレイ中' :
+                                                    room.status === 'finish' ? 'ゲーム終了' : '状態不明'}
                                         </p>
                                     </div>
                                 </div>
@@ -110,6 +130,37 @@ export default function RoomPage() {
                                 <p>
                                     参加者: {room.players.length}/2
                                 </p>
+                                {room.players.length < 2 && (
+                                    <p>もう1人のプレイヤーを待っています...</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {room.status === 'playing' && (
+                        <div>
+                            <h2>
+                                ゲーム進行中
+                            </h2>
+                            <div>
+                                <p>
+                                    参加者: {room.players.length}/2
+                                </p>
+                                <p>ゲームが進行中です</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {room.status === 'finish' && (
+                        <div>
+                            <h2>
+                                ゲーム終了
+                            </h2>
+                            <div>
+                                <p>
+                                    参加者: {room.players.length}/2
+                                </p>
+                                <p>ゲームが終了しました</p>
                             </div>
                         </div>
                     )}

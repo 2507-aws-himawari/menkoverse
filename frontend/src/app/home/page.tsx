@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { mockApi, mockUsers } from '../../lib/mockData';
@@ -47,7 +47,14 @@ export default function HomePage() {
                 roomId: roomId.trim(),
                 currentUser
             });
-            router.push(`/room/${roomId.trim()}`);
+
+            // 部屋の現在のステータスを取得してリダイレクト
+            const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
+            if (roomData) {
+                router.push(`/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`);
+            } else {
+                setErrorMessage('部屋の情報を取得できませんでした');
+            }
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
         } finally {
