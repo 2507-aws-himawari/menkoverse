@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { useAtom } from 'jotai';
 import { mockApi } from '../../../lib/mockData';
-import type { MockRoom } from '../../../lib/mockData';
+import { currentRoomAtom, loadingAtom, errorAtom } from '../../../lib/atoms';
 
 export default function RoomPage() {
     const params = useParams();
     const rawRoomId = params?.roomId as string;
     const roomId = rawRoomId ? decodeURIComponent(rawRoomId) : '';
-    const [room, setRoom] = useState<MockRoom | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [room, setRoom] = useAtom(currentRoomAtom);
+    const [loading, setLoading] = useAtom(loadingAtom);
+    const [error, setError] = useAtom(errorAtom);
 
     useEffect(() => {
         const fetchRoom = async () => {
@@ -101,9 +102,6 @@ export default function RoomPage() {
                                 プレイヤー待機中
                             </h2>
                             <div>
-                                <p>
-                                    あいことば <strong>{room.id}</strong> を共有してプレイヤーを招待しましょう！
-                                </p>
                                 <p>
                                     参加者: {room.players.length}/2
                                 </p>

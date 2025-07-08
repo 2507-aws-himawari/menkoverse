@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { mockApi, mockUsers, currentUser, setCurrentUser } from '../../lib/mockData';
-import type { MockRoom } from '../../lib/mockData';
+import { useAtom } from 'jotai';
+import { mockApi, mockUsers } from '../../lib/mockData';
+import { currentUserAtom, availableRoomsAtom } from '../../lib/atoms';
 
 export default function HomePage() {
     const [roomId, setRoomId] = useState('');
     const [isJoining, setIsJoining] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const [selectedUser, setSelectedUser] = useState(currentUser.id);
-    const [availableRooms, setAvailableRooms] = useState<MockRoom[]>([]);
+    const [currentUser, setCurrentUser] = useAtom(currentUserAtom);
+    const [availableRooms, setAvailableRooms] = useAtom(availableRoomsAtom);
     const router = useRouter();
 
     useEffect(() => {
@@ -23,11 +24,13 @@ export default function HomePage() {
             }
         };
         fetchRooms();
-    }, []);
+    }, [setAvailableRooms]);
 
     const handleUserChange = (userId: string) => {
-        setSelectedUser(userId);
-        setCurrentUser(userId);
+        const user = mockUsers.find(u => u.id === userId);
+        if (user) {
+            setCurrentUser(user);
+        }
     };
 
     const handleJoinRoom = async () => {
@@ -40,7 +43,10 @@ export default function HomePage() {
         setErrorMessage('');
 
         try {
-            const result = await mockApi.joinRoom({ roomId: roomId.trim() });
+            const result = await mockApi.joinRoom({
+                roomId: roomId.trim(),
+                currentUser
+            });
             router.push(`/room/${roomId.trim()}`);
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
@@ -58,7 +64,7 @@ export default function HomePage() {
                     <div>
                         <label>ユーザー選択</label>
                         <select
-                            value={selectedUser}
+                            value={currentUser.id}
                             onChange={(e) => handleUserChange(e.target.value)}
                         >
                             {mockUsers.map(user => (
