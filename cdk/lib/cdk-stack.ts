@@ -264,10 +264,11 @@ export class CdkStack extends cdk.Stack {
         version: rds.AuroraPostgresEngineVersion.VER_15_4,
       }),
       credentials: rds.Credentials.fromSecret(dbCredentialsSecret),
-      writer: rds.ClusterInstance.provisioned('writer', {
-        instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.SMALL),
+      writer: rds.ClusterInstance.serverlessV2('writer', {
         publiclyAccessible: false,
       }),
+      serverlessV2MinCapacity: 0.5, // 最小ACU（開発環境用）
+      serverlessV2MaxCapacity: 2,   // 最大ACU（トラフィック増加時）
       vpcSubnets: {
         subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
       },
@@ -354,16 +355,15 @@ export class CdkStack extends cdk.Stack {
     // Cost monitoring budget
     const costBudget = new budgets.CfnBudget(this, 'MenkoverseCostBudget', {
       budget: {
-        budgetName: 'Menkoverse-Monthly-Budget',
+        budgetName: `Menkoverse-${this.stackName}-Monthly-Budget`,
         budgetLimit: {
-          amount: 50, // $150/month budget
+          amount: 50, // $50/month budget (optimized)
           unit: 'USD',
         },
         timeUnit: 'MONTHLY',
         budgetType: 'COST',
         costFilters: {
-          'TagKey': [`aws:cloudformation:stack-name`],
-          'TagValue': [this.stackName],
+          'TagKeyValue': [`aws:cloudformation:stack-name$${this.stackName}`],
         },
       },
       notificationsWithSubscribers: [
