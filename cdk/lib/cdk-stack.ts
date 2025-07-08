@@ -391,7 +391,7 @@ export class CdkStack extends cdk.Stack {
           subscribers: [
             {
               subscriptionType: 'EMAIL',
-              address: 'admin@menkoverse.com', // Replace with actual email
+              address: 'ulxsth@gmail.com',
             },
           ],
         },
