@@ -22,8 +22,6 @@ export default function RoomStatusPage() {
                 setLoading(true);
                 const roomData = await mockApi.getRoom({ roomId });
                 setRoom(roomData);
-
-                // 現在のURLのstatusと部屋の実際のstatusが異なる場合、リダイレクト
                 if (roomData && roomData.status !== status) {
                     router.replace(`/room/${encodeURIComponent(roomId)}/${roomData.status}`);
                 }
@@ -56,8 +54,6 @@ export default function RoomStatusPage() {
             </div>
         );
     }
-
-    // URLのstatusと部屋のstatusが一致しない場合の処理
     if (room.status !== status) {
         return (
             <div>
@@ -81,7 +77,7 @@ export default function RoomStatusPage() {
                     </div>
 
                     <div>
-                        {room.players.map((player, index) => {
+                        {room.players.map((player) => {
                             const user = getUserById(player.userId);
                             if (!user) return null;
 

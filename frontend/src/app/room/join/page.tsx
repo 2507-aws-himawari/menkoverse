@@ -43,12 +43,6 @@ export default function JoinRoomPage() {
         setErrorMessage('');
 
         try {
-            const result = await mockApi.joinRoom({
-                roomId: roomId.trim(),
-                currentUser
-            });
-
-            // 部屋の現在のステータスを取得してリダイレクト
             const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
             if (roomData) {
                 router.push(`/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`);
