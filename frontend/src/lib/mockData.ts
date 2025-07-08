@@ -90,9 +90,9 @@ export const mockApi = {
         };
         mockRooms.push(newRoom);
         return newRoom;
-    },
-    joinRoom: async (input: { roomId: string; currentUser: MockUser }): Promise<MockRoomPlayer> => {
+    }, joinRoom: async (input: { roomId: string; currentUser: MockUser }): Promise<MockRoomPlayer> => {
         const room = mockRooms.find(r => r.id === input.roomId);
+
         if (!room) {
             throw new Error(`部屋が見つかりません: ${input.roomId}`);
         }
@@ -121,7 +121,6 @@ export const mockApi = {
 
         room.players.push(newPlayer);
 
-        // プレイヤーが2人になったら自動的にplayingステータスに変更
         if (room.players.length === 2) {
             room.status = 'playing';
         }
@@ -131,7 +130,8 @@ export const mockApi = {
 
     // 部屋の情報を取得
     getRoom: async (input: { roomId: string }): Promise<MockRoom | null> => {
-        return mockRooms.find(r => r.id === input.roomId) || null;
+        const room = mockRooms.find(r => r.id === input.roomId) || null;
+        return room;
     },
 
     // 利用可能な部屋一覧を取得

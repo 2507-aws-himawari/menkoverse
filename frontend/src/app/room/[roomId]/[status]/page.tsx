@@ -20,6 +20,7 @@ export default function RoomStatusPage() {
         const fetchRoom = async () => {
             try {
                 setLoading(true);
+                setError(null);
                 const roomData = await mockApi.getRoom({ roomId });
                 setRoom(roomData);
                 if (roomData && roomData.status !== status) {
@@ -27,6 +28,7 @@ export default function RoomStatusPage() {
                 }
             } catch (err) {
                 setError(err instanceof Error ? err.message : '部屋の取得に失敗しました');
+                setRoom(null);
             } finally {
                 setLoading(false);
             }
@@ -37,7 +39,7 @@ export default function RoomStatusPage() {
             const interval = setInterval(fetchRoom, 2000);
             return () => clearInterval(interval);
         }
-    }, [roomId, status, router]);
+    }, [roomId, status, router, setRoom, setLoading, setError]);
 
     if (loading) {
         return (
@@ -61,7 +63,6 @@ export default function RoomStatusPage() {
             </div>
         );
     }
-
     return (
         <div>
             <div>
@@ -77,7 +78,7 @@ export default function RoomStatusPage() {
                     </div>
 
                     <div>
-                        {room.players.map((player) => {
+                        {room.players.map((player, index) => {
                             const user = getUserById(player.userId);
                             if (!user) return null;
 

@@ -43,9 +43,15 @@ export default function JoinRoomPage() {
         setErrorMessage('');
 
         try {
+            const result = await mockApi.joinRoom({
+                roomId: roomId.trim(),
+                currentUser
+            });
+
             const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
             if (roomData) {
-                router.push(`/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`);
+                const targetUrl = `/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`;
+                router.push(targetUrl);
             } else {
                 setErrorMessage('部屋の情報を取得できませんでした');
             }
@@ -123,7 +129,8 @@ export default function JoinRoomPage() {
 
                                                     const roomData = await mockApi.getRoom({ roomId: room.id });
                                                     if (roomData) {
-                                                        router.push(`/room/${encodeURIComponent(room.id)}/${roomData.status}`);
+                                                        const targetUrl = `/room/${encodeURIComponent(room.id)}/${roomData.status}`;
+                                                        router.push(targetUrl);
                                                     }
                                                 } catch (error) {
                                                     setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
