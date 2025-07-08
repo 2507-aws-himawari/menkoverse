@@ -29,15 +29,6 @@ export const mockUsers: MockUser[] = [
     { id: 'user3', name: 'わんわん', isAdmin: false },
 ];
 
-export let currentUser: MockUser = mockUsers[0]!;
-
-export const setCurrentUser = (userId: string) => {
-    const user = mockUsers.find(u => u.id === userId);
-    if (user) {
-        currentUser = user;
-    }
-};
-
 // モックルームデータ
 let mockRooms: MockRoom[] = [
     {
@@ -59,14 +50,14 @@ let mockRooms: MockRoom[] = [
     },
     {
         id: 'かきくけこ',
-        ownerId: 'user2',
+        ownerId: 'user1',
         status: 'waiting',
         owner: mockUsers[1]!,
         players: [
             {
                 id: 'player2',
                 roomId: 'かきくけこ',
-                userId: 'user2',
+                userId: 'user1',
                 hp: 85,
                 pp: 15,
                 turn: 2,
@@ -77,29 +68,29 @@ let mockRooms: MockRoom[] = [
 ];
 
 export const mockApi = {
-    createRoom: async (input: { roomId?: string }): Promise<MockRoom> => {
+    createRoom: async (input: { roomId?: string; currentUser: MockUser }): Promise<MockRoom> => {
         const roomId = input.roomId || `room${Date.now()}`;
         const newRoom: MockRoom = {
             id: roomId,
-            ownerId: currentUser.id,
+            ownerId: input.currentUser.id,
             status: 'waiting',
-            owner: currentUser,
+            owner: input.currentUser,
             players: [
                 {
                     id: `player${Date.now()}`,
                     roomId: roomId,
-                    userId: currentUser.id,
+                    userId: input.currentUser.id,
                     hp: 100,
                     pp: 0,
                     turn: 1,
-                    user: currentUser,
+                    user: input.currentUser,
                 },
             ],
         };
         mockRooms.push(newRoom);
         return newRoom;
     },
-    joinRoom: async (input: { roomId: string }): Promise<MockRoomPlayer> => {
+    joinRoom: async (input: { roomId: string; currentUser: MockUser }): Promise<MockRoomPlayer> => {
         const room = mockRooms.find(r => r.id === input.roomId);
         if (!room) {
             throw new Error(`部屋が見つかりません: ${input.roomId}`);
@@ -112,7 +103,7 @@ export const mockApi = {
             throw new Error('部屋が満員です');
         }
 
-        const existingPlayer = room.players.find(p => p.userId === currentUser.id);
+        const existingPlayer = room.players.find(p => p.userId === input.currentUser.id);
 
         if (existingPlayer) {
             return existingPlayer;
@@ -121,11 +112,11 @@ export const mockApi = {
         const newPlayer: MockRoomPlayer = {
             id: `player${Date.now()}`,
             roomId: input.roomId,
-            userId: currentUser.id,
+            userId: input.currentUser.id,
             hp: 100,
             pp: 0,
             turn: 1,
-            user: currentUser,
+            user: input.currentUser,
         };
 
         room.players.push(newPlayer);
@@ -146,6 +137,7 @@ export const mockApi = {
     // プレイヤーの状態を更新
     updatePlayerStatus: async (input: {
         roomId: string;
+        currentUser: MockUser;
         hp?: number;
         pp?: number;
         turn?: number;
@@ -153,7 +145,7 @@ export const mockApi = {
         const room = mockRooms.find(r => r.id === input.roomId);
         if (!room) return null;
 
-        const player = room.players.find(p => p.userId === currentUser.id);
+        const player = room.players.find(p => p.userId === input.currentUser.id);
         if (!player) return null;
 
         if (input.hp !== undefined) player.hp = input.hp;
