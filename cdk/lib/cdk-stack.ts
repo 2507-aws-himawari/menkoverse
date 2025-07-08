@@ -211,7 +211,7 @@ export class CdkStack extends cdk.Stack {
 
     // VPC for RDS and App Runner
     this.vpc = new ec2.Vpc(this, 'MenkoverseVpc', {
-      maxAzs: 1,
+      maxAzs: 2,
       natGateways: 1,
       subnetConfiguration: [
         {
