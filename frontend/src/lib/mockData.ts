@@ -11,7 +11,6 @@ export interface MockRoomPlayer {
     hp: number;
     pp: number;
     turn: number;
-    user: MockUser;
 }
 
 export interface MockRoom {
@@ -29,6 +28,11 @@ export const mockUsers: MockUser[] = [
     { id: 'user3', name: 'わんわん', isAdmin: false },
 ];
 
+// ユーザーIDからユーザー情報を取得するヘルパー関数
+export const getUserById = (userId: string): MockUser | undefined => {
+    return mockUsers.find(user => user.id === userId);
+};
+
 // モックルームデータ
 let mockRooms: MockRoom[] = [
     {
@@ -44,24 +48,22 @@ let mockRooms: MockRoom[] = [
                 hp: 100,
                 pp: 0,
                 turn: 1,
-                user: mockUsers[0]!,
             },
         ],
     },
     {
         id: 'かきくけこ',
-        ownerId: 'user1',
+        ownerId: 'user2',
         status: 'waiting',
         owner: mockUsers[1]!,
         players: [
             {
                 id: 'player2',
                 roomId: 'かきくけこ',
-                userId: 'user1',
+                userId: 'user2',
                 hp: 85,
                 pp: 15,
                 turn: 2,
-                user: mockUsers[1]!,
             },
         ],
     },
@@ -83,7 +85,6 @@ export const mockApi = {
                     hp: 100,
                     pp: 0,
                     turn: 1,
-                    user: input.currentUser,
                 },
             ],
         };
@@ -116,7 +117,6 @@ export const mockApi = {
             hp: 100,
             pp: 0,
             turn: 1,
-            user: input.currentUser,
         };
 
         room.players.push(newPlayer);

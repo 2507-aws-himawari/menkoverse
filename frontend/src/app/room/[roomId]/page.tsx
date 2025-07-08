@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi } from '../../../lib/mockData';
+import { mockApi, getUserById } from '../../../lib/mockData';
 import { currentRoomAtom, loadingAtom, errorAtom } from '../../../lib/atoms';
 
 export default function RoomPage() {
@@ -63,28 +63,33 @@ export default function RoomPage() {
                     </div>
 
                     <div>
-                        {room.players.map((player, index) => (
-                            <div key={player.id}>
-                                <div>
+                        {room.players.map((player, index) => {
+                            const user = getUserById(player.userId);
+                            if (!user) return null;
+
+                            return (
+                                <div key={player.id}>
                                     <div>
-                                        <span>
-                                            {player.user.name.charAt(0)}
-                                        </span>
+                                        <div>
+                                            <span>
+                                                {user.name.charAt(0)}
+                                            </span>
+                                        </div>
+                                        <h3>
+                                            {user.name}
+                                        </h3>
+                                        {player.userId === room.ownerId && (
+                                            <span>
+                                                ホスト
+                                            </span>
+                                        )}
+                                        <p>
+                                            待機中...
+                                        </p>
                                     </div>
-                                    <h3>
-                                        {player.user.name}
-                                    </h3>
-                                    {player.userId === room.ownerId && (
-                                        <span>
-                                            ホスト
-                                        </span>
-                                    )}
-                                    <p>
-                                        待機中...
-                                    </p>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                         {room.players.length < 2 && (
                             <div>
