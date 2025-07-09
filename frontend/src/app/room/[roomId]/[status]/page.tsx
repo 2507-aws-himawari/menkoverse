@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi, getUserById, GAME_CONSTANTS, getActivePlayer, isFirstPlayer, calculatePPMax } from '../../../../lib/mockData';
+import { mockApi, getUserById, GAME_CONSTANTS, getActivePlayer, isFirstPlayer, calculatePPMax, calculatePlayerTurn } from '../../../../lib/mockData';
 import { currentRoomAtom, loadingAtom, errorAtom, currentUserAtom } from '../../../../lib/atoms';
 
 export default function RoomStatusPage() {
@@ -388,9 +388,14 @@ export default function RoomStatusPage() {
                                 {/* 非アクティブプレイヤーへのメッセージと操作 */}
                                 {(() => {
                                     const activePlayer = getActivePlayer(room);
-                                    return activePlayer?.userId !== currentUser.id && (
+                                    const isActiveUser = activePlayer?.userId === currentUser.id;
+
+                                    return !isActiveUser && (
                                         <div style={{ marginTop: '16px' }}>
                                             <p>相手のターンです。待機してください。</p>
+                                            <p style={{ fontSize: '12px', color: '#666' }}>
+                                                デバッグ: アクティブプレイヤー = {activePlayer?.userId || 'なし'}
+                                            </p>
 
                                             {/* デモ用：相手ターン終了ボタン */}
                                             <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
