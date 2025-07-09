@@ -18,8 +18,6 @@ export interface MockRoom {
     id: string;
     ownerId: string;
     status: 'waiting' | 'playing' | 'finish';
-    players: MockRoomPlayer[];
-    owner: MockUser;
 }
 
 // API関連の型定義

@@ -1,6 +1,15 @@
 import { GAME_CONSTANTS } from './constants';
 import { calculatePPMax, calculatePlayerTurn, getActivePlayer, recoverPlayerPP, switchTurns } from './gameLogic';
-import { mockUsers, mockRooms, findMockRoomById } from './mockData';
+import {
+    mockUsers,
+    mockRooms,
+    mockRoomPlayers,
+    findMockRoomById,
+    findPlayersByRoomId,
+    findPlayerByUserIdAndRoomId,
+    findUserById,
+    updateMockRoomPlayers
+} from './mockData';
 import type {
     MockUser,
     MockRoom,
@@ -22,19 +31,23 @@ export const mockApi = {
             id: roomId,
             ownerId: input.currentUser.id,
             status: 'waiting',
-            owner: input.currentUser,
-            players: [
-                {
-                    id: `player${Date.now()}`,
-                    roomId: roomId,
-                    userId: input.currentUser.id,
-                    hp: GAME_CONSTANTS.INITIAL_HP,
-                    pp: 1,
-                    turn: 1,
-                    turnStatus: 'ended',
-                },
-            ],
         };
+
+        // 部屋をmockRoomsに追加
+        mockRooms.push(newRoom);
+
+        // プレイヤーを作成してmockRoomPlayersに追加
+        const newPlayer: MockRoomPlayer = {
+            id: `player${Date.now()}`,
+            roomId: roomId,
+            userId: input.currentUser.id,
+            hp: GAME_CONSTANTS.INITIAL_HP,
+            pp: 1,
+            turn: 1,
+            turnStatus: 'ended',
+        };
+        mockRoomPlayers.push(newPlayer);
+
         return newRoom;
     },
 
@@ -48,11 +61,15 @@ export const mockApi = {
         if (room.status !== 'waiting') {
             throw new Error(`この部屋は参加できません (状態: ${room.status})`);
         }
-        if (room.players.length >= 2) {
+
+        // 既存のプレイヤーを取得
+        const roomPlayers = findPlayersByRoomId(input.roomId);
+
+        if (roomPlayers.length >= 2) {
             throw new Error('部屋が満員です');
         }
 
-        const existingPlayer = room.players.find((p: MockRoomPlayer) => p.userId === input.currentUser.id);
+        const existingPlayer = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
 
         if (existingPlayer) {
             return existingPlayer;
@@ -68,30 +85,29 @@ export const mockApi = {
             turnStatus: 'ended',
         };
 
-        // 先行/後攻をランダムに決定
-        const shouldShuffle = Math.random() < 0.5;
-
-        if (shouldShuffle) {
-            room.players.unshift(newPlayer);
-        } else {
-            room.players.push(newPlayer);
-        }
+        // プレイヤーを追加
+        mockRoomPlayers.push(newPlayer);
 
         // ゲーム開始
-        if (room.players.length === 2) {
+        const updatedRoomPlayers = findPlayersByRoomId(input.roomId);
+        if (updatedRoomPlayers.length === 2) {
             room.status = 'playing';
 
-            room.players.forEach((player: MockRoomPlayer, index: number) => {
-                if (index === 0) {
-                    player.turn = 1;
-                    player.pp = 1;
-                    player.turnStatus = 'active';
-                } else {
-                    player.turn = 1;
-                    player.pp = 0;
-                    player.turnStatus = 'ended';
-                }
-            });
+            // 先行/後攻をランダムに決定
+            const shouldShuffle = Math.random() < 0.5;
+            const [player1, player2] = shouldShuffle ? [updatedRoomPlayers[1], updatedRoomPlayers[0]] : updatedRoomPlayers;
+
+            // ターン状態を設定
+            if (player1) {
+                player1.turn = 1;
+                player1.pp = 1;
+                player1.turnStatus = 'active';
+            }
+            if (player2) {
+                player2.turn = 1;
+                player2.pp = 0;
+                player2.turnStatus = 'ended';
+            }
         }
 
         return newPlayer;
@@ -113,8 +129,9 @@ export const mockApi = {
         const room = findMockRoomById(input.roomId);
         if (!room) return null;
 
-        const player = room.players.find((p: MockRoomPlayer) => p.userId === input.currentUser.id);
+        const player = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
+
         if (input.hp !== undefined) {
             player.hp = Math.max(0, Math.min(input.hp, GAME_CONSTANTS.MAX_HP));
         }
@@ -132,10 +149,11 @@ export const mockApi = {
         const room = findMockRoomById(input.roomId);
         if (!room) return null;
 
-        const player = room.players.find((p: MockRoomPlayer) => p.userId === input.currentUser.id);
+        const player = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
 
-        const playerIndex = room.players.findIndex((p: MockRoomPlayer) => p.userId === input.currentUser.id);
+        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const playerIndex = roomPlayers.findIndex((p: MockRoomPlayer) => p.userId === input.currentUser.id);
 
         const playerTurn = calculatePlayerTurn(room, playerIndex);
         player.turn = playerTurn;
@@ -154,8 +172,9 @@ export const mockApi = {
             throw new Error('あなたのターンではありません');
         }
 
-        const player1 = room.players[0];
-        const player2 = room.players[1];
+        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const player1 = roomPlayers[0];
+        const player2 = roomPlayers[1];
 
         if (!player1 || !player2) return room;
 
@@ -168,7 +187,7 @@ export const mockApi = {
         const room = findMockRoomById(input.roomId);
         if (!room) return null;
 
-        const player = room.players.find((p: MockRoomPlayer) => p.userId === input.currentUser.id);
+        const player = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
 
         // アクティブプレイヤーかチェック
@@ -203,8 +222,9 @@ export const mockApi = {
             throw new Error('あなたがアクティブプレイヤーです。自分のターンを終了してください。');
         }
 
-        const player1 = room.players[0]; // 先攻
-        const player2 = room.players[1]; // 後攻
+        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const player1 = roomPlayers[0]; // 先攻
+        const player2 = roomPlayers[1]; // 後攻
 
         if (!player1 || !player2) {
             throw new Error('プレイヤーが不足しています');
