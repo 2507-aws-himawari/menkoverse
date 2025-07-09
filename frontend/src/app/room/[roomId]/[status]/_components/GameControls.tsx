@@ -1,5 +1,5 @@
 import { getUserById, getActivePlayer, calculatePPMax } from '../../../../../lib/gameLogic';
-import { mockUsers, findPlayersByRoomId, findPlayerByUserIdAndRoomId } from '../../../../../lib/mockData';
+import { mockUsers, getPlayersByRoomId, getPlayerByUserIdAndRoomId } from '../../../../../lib/mockData';
 import type { MockRoom, MockRoomPlayer, MockUser } from '../../../../../lib/types';
 
 interface GameControlsProps {
@@ -26,7 +26,7 @@ export function GameControls({
     const isActiveUser = activePlayer?.userId === currentUser.id;
 
     // プレイヤー情報を取得
-    const roomPlayers = findPlayersByRoomId(room.id);
+    const roomPlayers = getPlayersByRoomId(room.id);
 
     return (
         <div>
@@ -77,7 +77,7 @@ function ActivePlayerControls({
     onConsumePP,
     onEndTurn
 }: ActivePlayerControlsProps) {
-    const currentPlayer = findPlayerByUserIdAndRoomId(currentUser.id, room.id);
+    const currentPlayer = getPlayerByUserIdAndRoomId(currentUser.id, room.id);
     const currentPP = currentPlayer?.pp || 0;
     const currentTurn = currentPlayer?.turn || 1;
     const ppMax = calculatePPMax(currentTurn);

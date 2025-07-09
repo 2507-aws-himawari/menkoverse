@@ -4,10 +4,9 @@ import {
     mockUsers,
     mockRooms,
     mockRoomPlayers,
-    findMockRoomById,
-    findPlayersByRoomId,
-    findPlayerByUserIdAndRoomId,
-    findUserById,
+    getRoomById,
+    getPlayersByRoomId,
+    getPlayerByUserIdAndRoomId,
     updateMockRoomPlayers
 } from './mockData';
 import type {
@@ -33,10 +32,8 @@ export const mockApi = {
             status: 'waiting',
         };
 
-        // 部屋をmockRoomsに追加
         mockRooms.push(newRoom);
 
-        // プレイヤーを作成してmockRoomPlayersに追加
         const newPlayer: MockRoomPlayer = {
             id: `player${Date.now()}`,
             roomId: roomId,
@@ -52,7 +49,7 @@ export const mockApi = {
     },
 
     joinRoom: async (input: JoinRoomInput): Promise<MockRoomPlayer> => {
-        const room = findMockRoomById(input.roomId);
+        const room = getRoomById(input.roomId);
 
         if (!room) {
             throw new Error(`部屋が見つかりません: ${input.roomId}`);
@@ -63,13 +60,13 @@ export const mockApi = {
         }
 
         // 既存のプレイヤーを取得
-        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const roomPlayers = getPlayersByRoomId(input.roomId);
 
         if (roomPlayers.length >= 2) {
             throw new Error('部屋が満員です');
         }
 
-        const existingPlayer = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        const existingPlayer = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
 
         if (existingPlayer) {
             return existingPlayer;
@@ -85,15 +82,13 @@ export const mockApi = {
             turnStatus: 'ended',
         };
 
-        // プレイヤーを追加
         mockRoomPlayers.push(newPlayer);
 
         // ゲーム開始
-        const updatedRoomPlayers = findPlayersByRoomId(input.roomId);
+        const updatedRoomPlayers = getPlayersByRoomId(input.roomId);
         if (updatedRoomPlayers.length === 2) {
             room.status = 'playing';
 
-            // 先行/後攻をランダムに決定
             const shouldShuffle = Math.random() < 0.5;
             const [player1, player2] = shouldShuffle ? [updatedRoomPlayers[1], updatedRoomPlayers[0]] : updatedRoomPlayers;
 
@@ -115,7 +110,7 @@ export const mockApi = {
 
     // 部屋の情報を取得
     getRoom: async (input: GetRoomInput): Promise<MockRoom | null> => {
-        const room = findMockRoomById(input.roomId) || null;
+        const room = getRoomById(input.roomId) || null;
         return room;
     },
 
@@ -126,10 +121,10 @@ export const mockApi = {
 
     // プレイヤーの状態を更新
     updatePlayerStatus: async (input: UpdatePlayerStatusInput): Promise<MockRoomPlayer | null> => {
-        const room = findMockRoomById(input.roomId);
+        const room = getRoomById(input.roomId);
         if (!room) return null;
 
-        const player = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
 
         if (input.hp !== undefined) {
@@ -146,13 +141,13 @@ export const mockApi = {
 
     // ターン開始時のPP回復
     startTurn: async (input: StartTurnInput): Promise<MockRoomPlayer | null> => {
-        const room = findMockRoomById(input.roomId);
+        const room = getRoomById(input.roomId);
         if (!room) return null;
 
-        const player = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
 
-        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const roomPlayers = getPlayersByRoomId(input.roomId);
         const playerIndex = roomPlayers.findIndex((p: MockRoomPlayer) => p.userId === input.currentUser.id);
 
         const playerTurn = calculatePlayerTurn(room, playerIndex);
@@ -164,7 +159,7 @@ export const mockApi = {
 
     // ターン終了
     endTurn: async (input: EndTurnInput): Promise<MockRoom | null> => {
-        const room = findMockRoomById(input.roomId);
+        const room = getRoomById(input.roomId);
         if (!room) return null;
 
         const activePlayer = getActivePlayer(room);
@@ -172,7 +167,7 @@ export const mockApi = {
             throw new Error('あなたのターンではありません');
         }
 
-        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const roomPlayers = getPlayersByRoomId(input.roomId);
         const player1 = roomPlayers[0];
         const player2 = roomPlayers[1];
 
@@ -184,10 +179,10 @@ export const mockApi = {
 
     // PP消費（デモ用）
     consumePP: async (input: ConsumePPInput): Promise<MockRoomPlayer | null> => {
-        const room = findMockRoomById(input.roomId);
+        const room = getRoomById(input.roomId);
         if (!room) return null;
 
-        const player = findPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
 
         // アクティブプレイヤーかチェック
@@ -209,7 +204,7 @@ export const mockApi = {
 
     // 相手ターンを強制終了（デモ用）
     forceEndOpponentTurn: async (input: ForceEndOpponentTurnInput): Promise<MockRoom | null> => {
-        const room = findMockRoomById(input.roomId);
+        const room = getRoomById(input.roomId);
         if (!room) return null;
 
         // アクティブプレイヤーを取得
@@ -222,7 +217,7 @@ export const mockApi = {
             throw new Error('あなたがアクティブプレイヤーです。自分のターンを終了してください。');
         }
 
-        const roomPlayers = findPlayersByRoomId(input.roomId);
+        const roomPlayers = getPlayersByRoomId(input.roomId);
         const player1 = roomPlayers[0]; // 先攻
         const player2 = roomPlayers[1]; // 後攻
 

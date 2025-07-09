@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { mockApi } from '../../../lib/mockApi';
-import { mockUsers, findPlayersByRoomId } from '../../../lib/mockData';
+import { mockUsers, getPlayersByRoomId } from '../../../lib/mockData';
 import { GAME_CONSTANTS } from '../../../lib/constants';
 import { currentUserAtom, availableRoomsAtom } from '../../../lib/atoms';
 
@@ -111,7 +111,7 @@ export default function JoinRoomPage() {
                         <h3>参加可能な部屋：</h3>
                         <div>
                             {availableRooms.map((room) => {
-                                const roomPlayers = findPlayersByRoomId(room.id);
+                                const roomPlayers = getPlayersByRoomId(room.id);
                                 return (
                                     <div key={room.id}>
                                         <span>{room.id}</span>
