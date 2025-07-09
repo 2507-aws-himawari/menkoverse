@@ -1,5 +1,3 @@
-// モックAPI実装
-
 import { GAME_CONSTANTS } from './constants';
 import { calculatePPMax, calculatePlayerTurn, getActivePlayer } from './gameLogic';
 import { mockUsers, mockRooms, addMockRoom, findMockRoomById } from './mockData';
@@ -31,7 +29,7 @@ export const mockApi = {
                     roomId: roomId,
                     userId: input.currentUser.id,
                     hp: GAME_CONSTANTS.INITIAL_HP,
-                    pp: 1, // ターン1なのでPP上限1
+                    pp: 1,
                     turn: 1,
                 },
             ],
@@ -65,7 +63,7 @@ export const mockApi = {
             roomId: input.roomId,
             userId: input.currentUser.id,
             hp: GAME_CONSTANTS.INITIAL_HP,
-            pp: 1, // ターン1なのでPP上限1
+            pp: 1,
             turn: 1,
         };
         // 先行/後攻をランダムに決定
@@ -83,15 +81,14 @@ export const mockApi = {
         if (room.players.length === 2) {
             room.status = 'playing';
 
-            // 先攻はターン1（奇数）でPP=1、後攻はターン0で待機状態
+            // 先攻はターン1でPP=1、後攻はターン0で待機状態
             room.players.forEach((player: MockRoomPlayer, index: number) => {
                 if (index === 0) {
-                    // 先攻: ターン1（奇数）、PP=1
+                    // 先攻: ターン1、PP=1
                     player.turn = 1;
                     player.pp = 1;
                 } else {
-                    // 後攻: ターン0（特殊な初期状態）、PP=0（待機状態）
-                    // 先攻のターン1が終了すると後攻のターン2（偶数）になる
+                    // 後攻: ターン0、PP=0（待機状態）
                     player.turn = 0;
                     player.pp = 0;
                 }
@@ -169,48 +166,28 @@ export const mockApi = {
 
         if (!player1 || !player2) return room;
 
-        console.log('endTurn - 実行:', {
-            activePlayer: activePlayer.userId,
-            currentUser: input.currentUser.id,
-            beforeState: {
-                player1: { userId: player1.userId, pp: player1.pp, turn: player1.turn },
-                player2: { userId: player2.userId, pp: player2.pp, turn: player2.turn }
-            }
-        });
-
         // 現在のアクティブプレイヤーのPPを0にする
         activePlayer.pp = 0;
 
-        // 次のアクティブプレイヤーを決定してPPを設定
-        if (activePlayer.userId === player1.userId) {
-            // 先攻のターン終了 → 後攻のターン開始
-            // 後攻のターン数は進めず、PP上限まで回復
-            player2.pp = calculatePPMax(player2.turn);
-            console.log('先攻のターン終了 → 後攻のターン開始', {
-                player2NewPP: player2.pp,
-                player2Turn: player2.turn,
-                calculatedMax: calculatePPMax(player2.turn)
-            });
-        } else {
-            // 後攻のターン終了 → 先攻の次のターン開始
-            // 両方のターン数を進める
-            player1.turn += 1;
-            player2.turn += 1;
-            player1.pp = calculatePPMax(player1.turn);
-            console.log('後攻のターン終了 → 先攻の次のターン開始', {
-                player1NewPP: player1.pp,
-                player1NewTurn: player1.turn,
-                player2NewTurn: player2.turn
-            });
-        }
+        // 新しいターンへ進める
+        // 共通のゲームターン数（両者の大きい方）を取得
+        const currentGameTurn = Math.max(player1.turn, player2.turn);
 
-        console.log('endTurn - 完了:', {
-            afterState: {
-                player1: { userId: player1.userId, pp: player1.pp, turn: player1.turn },
-                player2: { userId: player2.userId, pp: player2.pp, turn: player2.turn }
-            },
-            newActivePlayer: getActivePlayer(room)?.userId
-        });
+        if (activePlayer.userId === player1.userId) {
+            // 先攻のターン終了後は、後攻のターンになる
+            if (player2.turn === 0) {
+                // 後攻の最初のターンの場合、ターン1にする
+                player2.turn = 1;
+            } else {
+                // 後攻の次のターン（先攻のターン+1）に設定
+                player2.turn = player1.turn + 1;
+            }
+            player2.pp = calculatePPMax(player2.turn);
+        } else {
+            // 後攻のターン終了後は、先攻の次のターンになる
+            player1.turn = player2.turn + 1;
+            player1.pp = calculatePPMax(player1.turn);
+        }
 
         return room;
     },
@@ -263,16 +240,6 @@ export const mockApi = {
             throw new Error('プレイヤーが不足しています');
         }
 
-        console.log('forceEndOpponentTurn - 実行:', {
-            activePlayer: activePlayer.userId,
-            currentUser: input.currentUser.id,
-            beforeState: {
-                player1: { userId: player1.userId, pp: player1.pp, turn: player1.turn },
-                player2: { userId: player2.userId, pp: player2.pp, turn: player2.turn }
-            }
-        });
-
-        // 現在のアクティブプレイヤーのPPを0にする
         activePlayer.pp = 0;
 
         // 次のアクティブプレイヤーを決定してPPを設定
@@ -280,31 +247,13 @@ export const mockApi = {
             // 先攻のターン終了 → 後攻のターン開始
             // 後攻のターン数は進めず、PP上限まで回復
             player2.pp = calculatePPMax(player2.turn);
-            console.log('先攻のターン終了 → 後攻のターン開始', {
-                player2NewPP: player2.pp,
-                player2Turn: player2.turn,
-                calculatedMax: calculatePPMax(player2.turn)
-            });
         } else {
             // 後攻のターン終了 → 先攻の次のターン開始
             // 両方のターン数を進める
             player1.turn += 1;
             player2.turn += 1;
             player1.pp = calculatePPMax(player1.turn);
-            console.log('後攻のターン終了 → 先攻の次のターン開始', {
-                player1NewPP: player1.pp,
-                player1NewTurn: player1.turn,
-                player2NewTurn: player2.turn
-            });
         }
-
-        console.log('forceEndOpponentTurn - 完了:', {
-            afterState: {
-                player1: { userId: player1.userId, pp: player1.pp, turn: player1.turn },
-                player2: { userId: player2.userId, pp: player2.pp, turn: player2.turn }
-            },
-            newActivePlayer: getActivePlayer(room)?.userId
-        });
 
         return room;
     },
