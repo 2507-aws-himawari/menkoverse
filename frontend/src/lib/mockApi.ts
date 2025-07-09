@@ -1,6 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import { calculatePPMax, calculatePlayerTurn, getActivePlayer } from './gameLogic';
-import { mockUsers, mockRooms, addMockRoom, findMockRoomById } from './mockData';
+import { mockUsers, mockRooms, findMockRoomById } from './mockData';
 import type {
     MockUser,
     MockRoom,
@@ -31,10 +31,10 @@ export const mockApi = {
                     hp: GAME_CONSTANTS.INITIAL_HP,
                     pp: 1,
                     turn: 1,
+                    turnStatus: 'ended',
                 },
             ],
         };
-        addMockRoom(newRoom);
         return newRoom;
     },
 
@@ -65,6 +65,7 @@ export const mockApi = {
             hp: GAME_CONSTANTS.INITIAL_HP,
             pp: 1,
             turn: 1,
+            turnStatus: 'ended',
         };
 
         // 先行/後攻をランダムに決定
@@ -82,16 +83,16 @@ export const mockApi = {
         if (room.players.length === 2) {
             room.status = 'playing';
 
-            // 先攻はターン1でPP=1、後攻はターン1でPP=0（待機状態）
+            // 先攻はターン1でPP=1、turnStatus='active'、後攻はターン1でPP=0、turnStatus='ended'（待機状態）
             room.players.forEach((player: MockRoomPlayer, index: number) => {
                 if (index === 0) {
-                    // 先攻: ターン1、PP=1
                     player.turn = 1;
                     player.pp = 1;
+                    player.turnStatus = 'active';
                 } else {
-                    // 後攻: ターン1、PP=0（待機状態）
                     player.turn = 1;
                     player.pp = 0;
+                    player.turnStatus = 'ended';
                 }
             });
         }
@@ -167,20 +168,19 @@ export const mockApi = {
 
         if (!player1 || !player2) return room;
 
-        // アクティブプレイヤーのPPをリセット
-        activePlayer.pp = 0;
+        activePlayer.turnStatus = 'ended';
 
-        // 新しいターンへ進める
         if (activePlayer.userId === player1.userId) {
-            // 先攻→後攻
-            player2.turn += 1;
+            player2.turnStatus = 'active';
             player2.pp = calculatePPMax(player2.turn);
         } else {
-            // 後攻→先攻
+            console.log('後攻のターン終了 → 次のラウンド開始');
             player1.turn += 1;
+            player2.turn += 1;
+            player1.turnStatus = 'active';
+            player2.turnStatus = 'ended';
             player1.pp = calculatePPMax(player1.turn);
         }
-
         return room;
     },
 
@@ -220,7 +220,6 @@ export const mockApi = {
             throw new Error('アクティブプレイヤーが見つかりません');
         }
 
-        // 相手がアクティブでない場合はエラー
         if (activePlayer.userId === input.currentUser.id) {
             throw new Error('あなたがアクティブプレイヤーです。自分のターンを終了してください。');
         }
@@ -231,21 +230,18 @@ export const mockApi = {
         if (!player1 || !player2) {
             throw new Error('プレイヤーが不足しています');
         }
+        activePlayer.turnStatus = 'ended';
 
-        // アクティブプレイヤーのPPをリセット
-        activePlayer.pp = 0;
-
-        // 次のアクティブプレイヤーを決定してPPを設定
         if (activePlayer.userId === player1.userId) {
-            // 先攻→後攻
-            player2.turn += 1;
+            player2.turnStatus = 'active';
             player2.pp = calculatePPMax(player2.turn);
         } else {
-            // 後攻→先攻
             player1.turn += 1;
+            player2.turn += 1;
+            player1.turnStatus = 'active';
+            player2.turnStatus = 'ended';
             player1.pp = calculatePPMax(player1.turn);
         }
-
         return room;
     },
 };

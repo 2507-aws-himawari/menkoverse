@@ -11,6 +11,7 @@ export interface MockRoomPlayer {
     hp: number;
     pp: number;
     turn: number;
+    turnStatus: 'active' | 'ended';
 }
 
 export interface MockRoom {

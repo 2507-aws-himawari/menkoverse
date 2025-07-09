@@ -21,8 +21,9 @@ export let mockRooms: MockRoom[] = [
                 roomId: 'あいおうえお',
                 userId: 'user1',
                 hp: GAME_CONSTANTS.INITIAL_HP,
-                pp: 1, // 初期PP
+                pp: 1,
                 turn: 1,
+                turnStatus: 'active',
             },
         ],
     },
@@ -37,15 +38,17 @@ export let mockRooms: MockRoom[] = [
                 roomId: 'かきくけこ',
                 userId: 'user2',
                 hp: 18,
-                pp: 1, // 先攻
+                pp: 1,
                 turn: 1,
+                turnStatus: 'active',
             }, {
                 id: 'player1',
                 roomId: 'かきくけこ',
                 userId: 'user1',
                 hp: 18,
-                pp: 0, // 後攻
+                pp: 0,
                 turn: 1,
+                turnStatus: 'ended',
             },
         ],
     },
@@ -59,11 +62,6 @@ export const updateMockRooms = (newRooms: MockRoom[]) => {
 // モックデータを取得する関数
 export const getMockRooms = (): MockRoom[] => {
     return mockRooms;
-};
-
-// モックデータに部屋を追加する関数
-export const addMockRoom = (room: MockRoom): void => {
-    mockRooms.push(room);
 };
 
 // モックデータから部屋を検索する関数
