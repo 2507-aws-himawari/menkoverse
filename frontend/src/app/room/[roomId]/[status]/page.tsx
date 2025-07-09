@@ -47,14 +47,15 @@ export default function RoomStatusPage() {
 
         try {
             setLoading(true);
+            setError(null);
             await mockApi.startTurn({
                 roomId: room.id,
                 currentUser
             });
-
-            // 部屋情報を再取得して更新
             const updatedRoom = await mockApi.getRoom({ roomId: room.id });
-            setRoom(updatedRoom);
+            if (updatedRoom) {
+                setRoom(updatedRoom);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'ターン開始に失敗しました');
         } finally {
@@ -67,14 +68,17 @@ export default function RoomStatusPage() {
 
         try {
             setLoading(true);
+            setError(null);
             await mockApi.endTurn({
                 roomId: room.id,
                 currentUser
             });
 
-            // 部屋情報を再取得して更新
+            // ターン終了が成功した場合のみ部屋情報を再取得
             const updatedRoom = await mockApi.getRoom({ roomId: room.id });
-            setRoom(updatedRoom);
+            if (updatedRoom) {
+                setRoom(updatedRoom);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'ターン終了に失敗しました');
         } finally {
@@ -87,14 +91,17 @@ export default function RoomStatusPage() {
 
         try {
             setLoading(true);
+            setError(null);
             await mockApi.forceEndOpponentTurn({
                 roomId: room.id,
                 currentUser
             });
 
-            // 部屋情報を再取得して更新
+            // 相手ターン終了が成功した場合のみ部屋情報を再取得
             const updatedRoom = await mockApi.getRoom({ roomId: room.id });
-            setRoom(updatedRoom);
+            if (updatedRoom) {
+                setRoom(updatedRoom);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : '相手ターン終了に失敗しました');
         } finally {
@@ -107,23 +114,44 @@ export default function RoomStatusPage() {
 
         try {
             setLoading(true);
+            setError(null); // エラーをクリア
             await mockApi.consumePP({
                 roomId: room.id,
                 currentUser,
                 ppCost
             });
 
-            // 部屋情報を再取得して更新
             const updatedRoom = await mockApi.getRoom({ roomId: room.id });
-            setRoom(updatedRoom);
+            if (updatedRoom) {
+                setRoom(updatedRoom);
+            }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'PP消費に失敗しました');
+            const errorMessage = err instanceof Error ? err.message : 'PP消費に失敗しました';
+            setError(errorMessage);
+            console.error('PP消費エラー:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
+    if (error && !room) {
+        return (
+            <div>
+                <div>
+                    <h1>エラーが発生しました</h1>
+                    <p>{error}</p>
+                    <button onClick={() => {
+                        setError(null);
+                        window.location.reload();
+                    }}>
+                        再読み込み
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading && !room) {
         return (
             <div>
                 <div>ロード中...</div>
@@ -131,7 +159,7 @@ export default function RoomStatusPage() {
         );
     }
 
-    if (error || !room) {
+    if (!room) {
         return (
             <div>
                 <div>部屋が見つかりません</div>
@@ -159,7 +187,22 @@ export default function RoomStatusPage() {
                             marginBottom: '16px',
                             border: '1px solid #e57373'
                         }}>
-                            エラー: {error}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>エラー: {error}</span>
+                                <button
+                                    onClick={() => setError(null)}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#c62828',
+                                        cursor: 'pointer',
+                                        fontSize: '16px',
+                                        padding: '0 4px'
+                                    }}
+                                >
+                                    ×
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -276,26 +319,44 @@ export default function RoomStatusPage() {
                                             {/* PP消費デモボタン */}
                                             <div style={{ marginBottom: '12px' }}>
                                                 <h4>PP消費デモ</h4>
-                                                <button
-                                                    onClick={() => handleConsumePP(1)}
-                                                    disabled={loading}
-                                                    style={{ marginRight: '8px' }}
-                                                >
-                                                    PP-1消費
-                                                </button>
-                                                <button
-                                                    onClick={() => handleConsumePP(2)}
-                                                    disabled={loading}
-                                                    style={{ marginRight: '8px' }}
-                                                >
-                                                    PP-2消費
-                                                </button>
-                                                <button
-                                                    onClick={() => handleConsumePP(3)}
-                                                    disabled={loading}
-                                                >
-                                                    PP-3消費
-                                                </button>
+                                                {(() => {
+                                                    const currentPlayer = room.players.find(p => p.userId === currentUser.id);
+                                                    const currentPP = currentPlayer?.pp || 0;
+
+                                                    return (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleConsumePP(1)}
+                                                                disabled={loading || currentPP < 1}
+                                                                style={{
+                                                                    marginRight: '8px',
+                                                                    opacity: currentPP < 1 ? 0.5 : 1
+                                                                }}
+                                                            >
+                                                                PP-1消費 {currentPP < 1 && '(不足)'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleConsumePP(2)}
+                                                                disabled={loading || currentPP < 2}
+                                                                style={{
+                                                                    marginRight: '8px',
+                                                                    opacity: currentPP < 2 ? 0.5 : 1
+                                                                }}
+                                                            >
+                                                                PP-2消費 {currentPP < 2 && '(不足)'}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleConsumePP(3)}
+                                                                disabled={loading || currentPP < 3}
+                                                                style={{
+                                                                    opacity: currentPP < 3 ? 0.5 : 1
+                                                                }}
+                                                            >
+                                                                PP-3消費 {currentPP < 3 && '(不足)'}
+                                                            </button>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
 
                                             {/* ターン終了ボタン */}
