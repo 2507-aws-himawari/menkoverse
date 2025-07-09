@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi, getUserById, GAME_CONSTANTS, getActivePlayer, isFirstPlayer } from '../../../../lib/mockData';
+import { mockApi, getUserById, GAME_CONSTANTS, getActivePlayer, isFirstPlayer, calculatePPMax } from '../../../../lib/mockData';
 import { currentRoomAtom, loadingAtom, errorAtom, currentUserAtom } from '../../../../lib/atoms';
 
 export default function RoomStatusPage() {
@@ -246,10 +246,9 @@ export default function RoomStatusPage() {
                                             <span>
                                                 ホスト
                                             </span>
-                                        )}
-                                        <div>
+                                        )}                        <div>
                                             <p>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</p>
-                                            <p>PP: {player.pp}/{GAME_CONSTANTS.MAX_PP}</p>
+                                            <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
                                             <p>ターン: {player.turn}</p>
                                         </div>
                                         <p>
@@ -318,7 +317,16 @@ export default function RoomStatusPage() {
 
                                             {/* PP消費デモボタン */}
                                             <div style={{ marginBottom: '12px' }}>
-                                                <h4>PP消費デモ</h4>
+                                                <h4>アクション（PP消費）</h4>
+                                                <p style={{ fontSize: '12px', color: '#666', margin: '0 0 8px 0' }}>
+                                                    ターン{(() => {
+                                                        const currentPlayer = room.players.find(p => p.userId === currentUser.id);
+                                                        return currentPlayer?.turn || 1;
+                                                    })()}のPP上限: {(() => {
+                                                        const currentPlayer = room.players.find(p => p.userId === currentUser.id);
+                                                        return calculatePPMax(currentPlayer?.turn || 1);
+                                                    })()}
+                                                </p>
                                                 {(() => {
                                                     const currentPlayer = room.players.find(p => p.userId === currentUser.id);
                                                     const currentPP = currentPlayer?.pp || 0;
@@ -415,7 +423,7 @@ export default function RoomStatusPage() {
                                         onClick={handleStartTurn}
                                         disabled={loading}
                                     >
-                                        {loading ? 'ターン開始中...' : 'ターン開始（PP+1）'}
+                                        {loading ? 'ターン開始中...' : 'ターン開始（PP全回復）'}
                                     </button>
                                 </div>
                             </div>

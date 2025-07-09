@@ -41,6 +41,11 @@ export const getUserById = (userId: string): MockUser | undefined => {
     return mockUsers.find(user => user.id === userId);
 };
 
+// ターン数に応じたPP上限を計算する関数
+export const calculatePPMax = (turn: number): number => {
+    return Math.min(turn, GAME_CONSTANTS.MAX_PP);
+};
+
 // ターン管理の関数
 export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
     if (room.players.length !== 2) return null;
@@ -200,14 +205,15 @@ export const mockApi = {
             player.hp = Math.max(0, Math.min(input.hp, GAME_CONSTANTS.MAX_HP));
         }
         if (input.pp !== undefined) {
-            player.pp = Math.max(0, Math.min(input.pp, GAME_CONSTANTS.MAX_PP));
+            const ppMax = calculatePPMax(player.turn);
+            player.pp = Math.max(0, Math.min(input.pp, ppMax));
         }
         if (input.turn !== undefined) player.turn = input.turn;
 
         return player;
     },
 
-    // ターン開始時のPP増加
+    // ターン開始時のPP回復
     startTurn: async (input: {
         roomId: string;
         currentUser: MockUser;
@@ -218,9 +224,12 @@ export const mockApi = {
         const player = room.players.find(p => p.userId === input.currentUser.id);
         if (!player) return null;
 
-        // PPを1増加（上限まで）
-        player.pp = Math.min(player.pp + GAME_CONSTANTS.PP_PER_TURN, GAME_CONSTANTS.MAX_PP);
+        // ターン数を増加
         player.turn += 1;
+
+        // 新しいターンでのPP上限まで回復
+        const ppMax = calculatePPMax(player.turn);
+        player.pp = ppMax;
 
         return player;
     },
@@ -242,9 +251,12 @@ export const mockApi = {
         // 相手プレイヤーを見つける
         const otherPlayer = room.players.find(p => p.userId !== input.currentUser.id);
         if (otherPlayer) {
-            // 相手プレイヤーのPPを増加してターンを進める
-            otherPlayer.pp = Math.min(otherPlayer.pp + GAME_CONSTANTS.PP_PER_TURN, GAME_CONSTANTS.MAX_PP);
+            // 相手プレイヤーのターンを進める
             otherPlayer.turn += 1;
+
+            // 新しいターンでのPP上限まで回復
+            const ppMax = calculatePPMax(otherPlayer.turn);
+            otherPlayer.pp = ppMax;
         }
 
         return room;
@@ -296,11 +308,14 @@ export const mockApi = {
             throw new Error('あなたがアクティブプレイヤーです。自分のターンを終了してください。');
         }
 
-        // 現在のユーザー（非アクティブプレイヤー）のPPを増加してターンを進める
+        // 現在のユーザー（非アクティブプレイヤー）のターンを進める
         const currentPlayer = room.players.find(p => p.userId === input.currentUser.id);
         if (currentPlayer) {
-            currentPlayer.pp = Math.min(currentPlayer.pp + GAME_CONSTANTS.PP_PER_TURN, GAME_CONSTANTS.MAX_PP);
             currentPlayer.turn += 1;
+
+            // 新しいターンでのPP上限まで回復
+            const ppMax = calculatePPMax(currentPlayer.turn);
+            currentPlayer.pp = ppMax;
         }
 
         return room;
