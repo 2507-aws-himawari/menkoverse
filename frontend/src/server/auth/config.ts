@@ -1,9 +1,8 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import type { DefaultSession, NextAuthConfig } from "next-auth";
 import Cognito from "next-auth/providers/cognito";
-
-import { db } from "@/server/db";
 import { env } from "@/env";
+import { db } from "@/server/db";
+import { PrismaAdapter } from "@auth/prisma-adapter"
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -37,6 +36,13 @@ export const authConfig = {
 			clientId: env.AUTH_COGNITO_CLIENT_ID,
 			clientSecret: env.AUTH_COGNITO_CLIENT_SECRET,
 			issuer: env.AUTH_COGNITO_ISSUER,
+			allowDangerousEmailAccountLinking: true,
+			authorization: {
+				params: {
+					scope: "openid",
+				},
+			},
+			checks: ["nonce"],
 		}),
 		/**
 		 * ...add more providers here.
@@ -48,7 +54,8 @@ export const authConfig = {
 		 * @see https://next-auth.js.org/providers/github
 		 */
 	],
-	adapter: PrismaAdapter(db),
+	adapter: PrismaAdapter(db), // Use the custom adapter to handle Cognito's sub as user id
+	secret: env.AUTH_SECRET,
 	callbacks: {
 		session: ({ session, user }) => ({
 			...session,
