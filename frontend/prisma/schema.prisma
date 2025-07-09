@@ -65,8 +65,8 @@ model User {
 }
 
 model VerificationToken {
-    identifier String   @unique
-    token      String   @unique
+    identifier String
+    token      String
     expires    DateTime
 
     @@id([identifier, token])
