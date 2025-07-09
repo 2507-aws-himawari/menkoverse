@@ -167,34 +167,19 @@ export const mockApi = {
 
         if (!player1 || !player2) return room;
 
-        // デバッグログを追加
-        console.log('ターン終了前の状態:');
-        console.log(`先攻(${player1.userId}): turn=${player1.turn}, pp=${player1.pp}`);
-        console.log(`後攻(${player2.userId}): turn=${player2.turn}, pp=${player2.pp}`);
-        console.log(`アクティブプレイヤー: ${activePlayer.userId}`);
-
-        // 現在のアクティブプレイヤーのPPを0にする
+        // アクティブプレイヤーのPPをリセット
         activePlayer.pp = 0;
 
         // 新しいターンへ進める
         if (activePlayer.userId === player1.userId) {
-            // 先攻のターン終了 → 後攻のターン開始
-            console.log('先攻のターン終了 → 後攻のターン開始');
-            // 後攻のターン数を進めてPPを回復
+            // 先攻→後攻
             player2.turn += 1;
             player2.pp = calculatePPMax(player2.turn);
         } else {
-            // 後攻のターン終了 → 先攻の次のターン開始
-            console.log('後攻のターン終了 → 先攻の次のターン開始');
-            // 先攻のターン数を進めてPPを回復
+            // 後攻→先攻
             player1.turn += 1;
             player1.pp = calculatePPMax(player1.turn);
         }
-
-        // デバッグログを追加
-        console.log('ターン終了後の状態:');
-        console.log(`先攻(${player1.userId}): turn=${player1.turn}, pp=${player1.pp}`);
-        console.log(`後攻(${player2.userId}): turn=${player2.turn}, pp=${player2.pp}`);
 
         return room;
     },
@@ -247,34 +232,19 @@ export const mockApi = {
             throw new Error('プレイヤーが不足しています');
         }
 
-        // デバッグログを追加
-        console.log('相手ターン強制終了前の状態:');
-        console.log(`先攻(${player1.userId}): turn=${player1.turn}, pp=${player1.pp}`);
-        console.log(`後攻(${player2.userId}): turn=${player2.turn}, pp=${player2.pp}`);
-        console.log(`アクティブプレイヤー: ${activePlayer.userId}`);
-
-        // アクティブプレイヤーのPPを0にする
+        // アクティブプレイヤーのPPをリセット
         activePlayer.pp = 0;
 
         // 次のアクティブプレイヤーを決定してPPを設定
         if (activePlayer.userId === player1.userId) {
-            // 先攻のターン終了 → 後攻のターン開始
-            console.log('先攻のターン終了 → 後攻のターン開始');
-            // 後攻のターン数を進めてPPを回復
+            // 先攻→後攻
             player2.turn += 1;
             player2.pp = calculatePPMax(player2.turn);
         } else {
-            // 後攻のターン終了 → 先攻の次のターン開始
-            console.log('後攻のターン終了 → 先攻の次のターン開始');
-            // 先攻のターン数を進めてPPを回復
+            // 後攻→先攻
             player1.turn += 1;
             player1.pp = calculatePPMax(player1.turn);
         }
-
-        // デバッグログを追加
-        console.log('相手ターン強制終了後の状態:');
-        console.log(`先攻(${player1.userId}): turn=${player1.turn}, pp=${player1.pp}`);
-        console.log(`後攻(${player2.userId}): turn=${player2.turn}, pp=${player2.pp}`);
 
         return room;
     },

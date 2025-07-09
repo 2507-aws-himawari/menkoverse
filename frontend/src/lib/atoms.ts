@@ -1,18 +1,18 @@
 import { atom } from 'jotai';
-import type { MockUser, MockRoom } from './mockData';
+import type { MockUser, MockRoom } from './types';
 import { mockUsers } from './mockData';
 
-// 現在のユーザー
+// ユーザー
 export const currentUserAtom = atom<MockUser>(mockUsers[0]!);
 
-// 現在の部屋
+// 部屋
 export const currentRoomAtom = atom<MockRoom | null>(null);
 
-// ローディング状態
+// ローディング
 export const loadingAtom = atom<boolean>(false);
 
-// エラー状態
+// エラー
 export const errorAtom = atom<string | null>(null);
 
-// 利用可能な部屋一覧
+// 部屋一覧
 export const availableRoomsAtom = atom<MockRoom[]>([]);

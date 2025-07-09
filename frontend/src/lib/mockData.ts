@@ -1,16 +1,14 @@
-// モックデータ定義
-
 import { GAME_CONSTANTS } from './constants';
 import type { MockUser, MockRoom, MockRoomPlayer } from './types';
 
-// モックユーザーデータ
+// ユーザー
 export const mockUsers: MockUser[] = [
     { id: 'user1', name: 'ふがふが', isAdmin: true },
     { id: 'user2', name: 'ぴよぴよ', isAdmin: false },
     { id: 'user3', name: 'わんわん', isAdmin: false },
 ];
 
-// モックルームデータ
+// 部屋
 export let mockRooms: MockRoom[] = [
     {
         id: 'あいおうえお',
@@ -23,7 +21,7 @@ export let mockRooms: MockRoom[] = [
                 roomId: 'あいおうえお',
                 userId: 'user1',
                 hp: GAME_CONSTANTS.INITIAL_HP,
-                pp: 1, // ターン1なのでPP上限1
+                pp: 1, // 初期PP
                 turn: 1,
             },
         ],
@@ -39,14 +37,14 @@ export let mockRooms: MockRoom[] = [
                 roomId: 'かきくけこ',
                 userId: 'user2',
                 hp: 18,
-                pp: 1, // 先攻ターン1
+                pp: 1, // 先攻
                 turn: 1,
             }, {
                 id: 'player1',
                 roomId: 'かきくけこ',
                 userId: 'user1',
                 hp: 18,
-                pp: 0, // 後攻ターン1（待機状態）
+                pp: 0, // 後攻
                 turn: 1,
             },
         ],
