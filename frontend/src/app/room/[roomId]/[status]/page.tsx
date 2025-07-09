@@ -3,8 +3,13 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi, getUserById, GAME_CONSTANTS, getActivePlayer, isFirstPlayer, calculatePPMax, calculatePlayerTurn } from '../../../../lib/mockData';
+import { mockApi } from '../../../../lib/mockApi';
+import { getUserById } from '../../../../lib/gameLogic';
+import { GAME_CONSTANTS } from '../../../../lib/constants';
+import { getActivePlayer, isFirstPlayer, calculatePPMax, calculatePlayerTurn } from '../../../../lib/gameLogic';
+import { mockUsers } from '../../../../lib/mockData';
 import { currentRoomAtom, loadingAtom, errorAtom, currentUserAtom } from '../../../../lib/atoms';
+import type { MockRoomPlayer } from '../../../../lib/types';
 
 export default function RoomStatusPage() {
     const params = useParams();
@@ -217,8 +222,8 @@ export default function RoomStatusPage() {
                     </div>
 
                     <div>
-                        {room.players.map((player, index) => {
-                            const user = getUserById(player.userId);
+                        {room.players.map((player: MockRoomPlayer, index: number) => {
+                            const user = getUserById(player.userId, mockUsers);
                             if (!user) return null;
 
                             const activePlayer = getActivePlayer(room);
@@ -300,7 +305,7 @@ export default function RoomStatusPage() {
                                 {/* 現在のターン情報 */}
                                 {(() => {
                                     const activePlayer = getActivePlayer(room);
-                                    const activeUser = activePlayer ? getUserById(activePlayer.userId) : null;
+                                    const activeUser = activePlayer ? getUserById(activePlayer.userId, mockUsers) : null;
                                     return activeUser && (
                                         <p style={{ fontWeight: 'bold', color: 'blue' }}>
                                             現在のターン: {activeUser.name}
@@ -320,19 +325,29 @@ export default function RoomStatusPage() {
                                                 <h4>アクション（PP消費）</h4>
                                                 <p style={{ fontSize: '12px', color: '#666', margin: '0 0 8px 0' }}>
                                                     ターン{(() => {
-                                                        const currentPlayer = room.players.find(p => p.userId === currentUser.id);
+                                                        const currentPlayer = room.players.find((p: MockRoomPlayer) => p.userId === currentUser.id);
                                                         return currentPlayer?.turn || 1;
                                                     })()}のPP上限: {(() => {
-                                                        const currentPlayer = room.players.find(p => p.userId === currentUser.id);
+                                                        const currentPlayer = room.players.find((p: MockRoomPlayer) => p.userId === currentUser.id);
                                                         return calculatePPMax(currentPlayer?.turn || 1);
                                                     })()}
                                                 </p>
                                                 {(() => {
-                                                    const currentPlayer = room.players.find(p => p.userId === currentUser.id);
+                                                    const currentPlayer = room.players.find((p: MockRoomPlayer) => p.userId === currentUser.id);
                                                     const currentPP = currentPlayer?.pp || 0;
 
                                                     return (
                                                         <>
+                                                            {currentPP === 0 && (
+                                                                <p style={{
+                                                                    fontSize: '14px',
+                                                                    color: '#ff6b6b',
+                                                                    margin: '0 0 8px 0',
+                                                                    fontWeight: 'bold'
+                                                                }}>
+                                                                    PPが0になりました。「ターン終了」ボタンを押してください。
+                                                                </p>
+                                                            )}
                                                             <button
                                                                 onClick={() => handleConsumePP(1)}
                                                                 disabled={loading || currentPP < 1}
@@ -372,14 +387,27 @@ export default function RoomStatusPage() {
                                                 onClick={handleEndTurn}
                                                 disabled={loading}
                                                 style={{
-                                                    backgroundColor: 'red',
+                                                    backgroundColor: (() => {
+                                                        const currentPlayer = room.players.find((p: MockRoomPlayer) => p.userId === currentUser.id);
+                                                        const currentPP = currentPlayer?.pp || 0;
+                                                        return currentPP === 0 ? '#ff4444' : 'red';
+                                                    })(),
                                                     color: 'white',
                                                     padding: '8px 16px',
                                                     border: 'none',
-                                                    borderRadius: '4px'
+                                                    borderRadius: '4px',
+                                                    fontWeight: (() => {
+                                                        const currentPlayer = room.players.find((p: MockRoomPlayer) => p.userId === currentUser.id);
+                                                        const currentPP = currentPlayer?.pp || 0;
+                                                        return currentPP === 0 ? 'bold' : 'normal';
+                                                    })()
                                                 }}
                                             >
-                                                {loading ? 'ターン終了中...' : 'ターン終了'}
+                                                {loading ? 'ターン終了中...' : ((() => {
+                                                    const currentPlayer = room.players.find((p: MockRoomPlayer) => p.userId === currentUser.id);
+                                                    const currentPP = currentPlayer?.pp || 0;
+                                                    return currentPP === 0 ? 'ターン終了（PP=0）' : 'ターン終了';
+                                                })())}
                                             </button>
                                         </div>
                                     );

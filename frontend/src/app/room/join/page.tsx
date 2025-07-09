@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi, mockUsers, GAME_CONSTANTS } from '../../../lib/mockData';
+import { mockApi } from '../../../lib/mockApi';
+import { mockUsers } from '../../../lib/mockData';
+import { GAME_CONSTANTS } from '../../../lib/constants';
 import { currentUserAtom, availableRoomsAtom } from '../../../lib/atoms';
 
 export default function JoinRoomPage() {
