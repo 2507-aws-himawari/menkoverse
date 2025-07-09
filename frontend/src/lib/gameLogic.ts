@@ -1,5 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import type { MockRoom, MockRoomPlayer, MockUser } from './types';
+import { findPlayersByRoomId } from './mockData';
 
 // ユーザー情報取得
 export const getUserById = (userId: string, mockUsers: MockUser[]): MockUser | undefined => {
@@ -13,15 +14,17 @@ export const calculatePPMax = (turn: number): number => {
 
 // プレイヤーターン計算
 export const calculatePlayerTurn = (room: MockRoom, playerIndex: number): number => {
-    return room.players[playerIndex]?.turn || 1;
+    const roomPlayers = findPlayersByRoomId(room.id);
+    return roomPlayers[playerIndex]?.turn || 1;
 };
 
 // ターン管理の関数
 export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
-    if (room.players.length !== 2) return null;
+    const roomPlayers = findPlayersByRoomId(room.id);
+    if (roomPlayers.length !== 2) return null;
 
-    const player1 = room.players[0]; // 先攻
-    const player2 = room.players[1]; // 後攻
+    const player1 = roomPlayers[0]; // 先攻
+    const player2 = roomPlayers[1]; // 後攻
 
     if (!player1 || !player2) return null;
 
@@ -42,12 +45,14 @@ export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
 
 // 先攻判定
 export const isFirstPlayer = (room: MockRoom, userId: string): boolean => {
-    return room.players[0]?.userId === userId;
+    const roomPlayers = findPlayersByRoomId(room.id);
+    return roomPlayers[0]?.userId === userId;
 };
 
 // 先攻or後攻取得
 export const getPlayerPosition = (room: MockRoom, userId: string): '先攻' | '後攻' | null => {
-    const playerIndex = room.players.findIndex(player => player.userId === userId);
+    const roomPlayers = findPlayersByRoomId(room.id);
+    const playerIndex = roomPlayers.findIndex(player => player.userId === userId);
     if (playerIndex === -1) return null;
     return playerIndex === 0 ? '先攻' : '後攻';
 };
@@ -59,7 +64,8 @@ export const recoverPlayerPP = (player: MockRoomPlayer): void => {
 
 // ターン遷移
 export const switchTurns = (room: MockRoom, currentActivePlayer: MockRoomPlayer): void => {
-    const [player1, player2] = room.players;
+    const roomPlayers = findPlayersByRoomId(room.id);
+    const [player1, player2] = roomPlayers;
 
     if (!player1 || !player2) return;
 

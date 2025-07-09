@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { mockApi } from '../../../lib/mockApi';
-import { mockUsers } from '../../../lib/mockData';
+import { mockUsers, findPlayersByRoomId } from '../../../lib/mockData';
 import { GAME_CONSTANTS } from '../../../lib/constants';
 import { currentUserAtom, availableRoomsAtom } from '../../../lib/atoms';
 
@@ -110,43 +110,46 @@ export default function JoinRoomPage() {
                     <div>
                         <h3>参加可能な部屋：</h3>
                         <div>
-                            {availableRooms.map((room) => (
-                                <div key={room.id}>
-                                    <span>{room.id}</span>
-                                    <span>{room.status === 'waiting' ? '待機中' :
-                                        room.status === 'playing' ? 'プレイ中' : '終了'}</span>
-                                    <span>({room.players.length}/2)</span>
-                                    {room.status === 'waiting' && room.players.length < 2 && (
-                                        <button
-                                            onClick={async () => {
-                                                setRoomId(room.id);
-                                                setIsJoining(true);
-                                                setErrorMessage('');
+                            {availableRooms.map((room) => {
+                                const roomPlayers = findPlayersByRoomId(room.id);
+                                return (
+                                    <div key={room.id}>
+                                        <span>{room.id}</span>
+                                        <span>{room.status === 'waiting' ? '待機中' :
+                                            room.status === 'playing' ? 'プレイ中' : '終了'}</span>
+                                        <span>({roomPlayers.length}/2)</span>
+                                        {room.status === 'waiting' && roomPlayers.length < 2 && (
+                                            <button
+                                                onClick={async () => {
+                                                    setRoomId(room.id);
+                                                    setIsJoining(true);
+                                                    setErrorMessage('');
 
-                                                try {
-                                                    await mockApi.joinRoom({
-                                                        roomId: room.id,
-                                                        currentUser
-                                                    });
+                                                    try {
+                                                        await mockApi.joinRoom({
+                                                            roomId: room.id,
+                                                            currentUser
+                                                        });
 
-                                                    const roomData = await mockApi.getRoom({ roomId: room.id });
-                                                    if (roomData) {
-                                                        const targetUrl = `/room/${encodeURIComponent(room.id)}/${roomData.status}`;
-                                                        router.push(targetUrl);
+                                                        const roomData = await mockApi.getRoom({ roomId: room.id });
+                                                        if (roomData) {
+                                                            const targetUrl = `/room/${encodeURIComponent(room.id)}/${roomData.status}`;
+                                                            router.push(targetUrl);
+                                                        }
+                                                    } catch (error) {
+                                                        setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
+                                                    } finally {
+                                                        setIsJoining(false);
                                                     }
-                                                } catch (error) {
-                                                    setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
-                                                } finally {
-                                                    setIsJoining(false);
-                                                }
-                                            }}
-                                            disabled={isJoining}
-                                        >
-                                            参加
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
+                                                }}
+                                                disabled={isJoining}
+                                            >
+                                                参加
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
                             {availableRooms.length === 0 && (
                                 <div>利用可能な部屋がありません</div>
                             )}

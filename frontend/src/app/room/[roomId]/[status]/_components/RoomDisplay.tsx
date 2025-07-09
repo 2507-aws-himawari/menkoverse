@@ -1,6 +1,6 @@
 import { getUserById, getActivePlayer, calculatePPMax } from '../../../../../lib/gameLogic';
 import { GAME_CONSTANTS } from '../../../../../lib/constants';
-import { mockUsers } from '../../../../../lib/mockData';
+import { mockUsers, findPlayersByRoomId, findUserById } from '../../../../../lib/mockData';
 import type { MockRoom, MockRoomPlayer } from '../../../../../lib/types';
 
 interface RoomDisplayProps {
@@ -8,11 +8,14 @@ interface RoomDisplayProps {
 }
 
 export function RoomDisplay({ room }: RoomDisplayProps) {
+    // プレイヤー情報を取得
+    const roomPlayers = findPlayersByRoomId(room.id);
+
     return (
         <div>
             <h1>ゲームルーム</h1>
             <div>
-                {room.players.map((player: MockRoomPlayer, index: number) => {
+                {roomPlayers.map((player: MockRoomPlayer, index: number) => {
                     const user = getUserById(player.userId, mockUsers);
                     if (!user) return null;
 
@@ -52,7 +55,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     );
                 })}
 
-                {room.players.length < 2 && (
+                {roomPlayers.length < 2 && (
                     <div>
                         <div>
                             <div></div>
@@ -68,8 +71,8 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     <div>
                         <h2>プレイヤー待機中</h2>
                         <div>
-                            <p>参加者: {room.players.length}/2</p>
-                            {room.players.length < 2 && (
+                            <p>参加者: {roomPlayers.length}/2</p>
+                            {roomPlayers.length < 2 && (
                                 <p>もう1人のプレイヤーを待っています...</p>
                             )}
                         </div>
@@ -80,7 +83,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     <div>
                         <h2>ゲーム終了</h2>
                         <div>
-                            <p>参加者: {room.players.length}/2</p>
+                            <p>参加者: {roomPlayers.length}/2</p>
                             <p>ゲームが終了しました</p>
                         </div>
                     </div>
