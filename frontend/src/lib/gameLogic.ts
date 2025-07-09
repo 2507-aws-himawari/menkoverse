@@ -44,3 +44,37 @@ export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
 export const isFirstPlayer = (room: MockRoom, userId: string): boolean => {
     return room.players[0]?.userId === userId;
 };
+
+// 先攻or後攻取得
+export const getPlayerPosition = (room: MockRoom, userId: string): '先攻' | '後攻' | null => {
+    const playerIndex = room.players.findIndex(player => player.userId === userId);
+    if (playerIndex === -1) return null;
+    return playerIndex === 0 ? '先攻' : '後攻';
+};
+
+// PP回復
+export const recoverPlayerPP = (player: MockRoomPlayer): void => {
+    player.pp = calculatePPMax(player.turn);
+};
+
+// ターン遷移
+export const switchTurns = (room: MockRoom, currentActivePlayer: MockRoomPlayer): void => {
+    const [player1, player2] = room.players;
+
+    if (!player1 || !player2) return;
+
+    currentActivePlayer.turnStatus = 'ended';
+
+    if (currentActivePlayer.userId === player1.userId) {
+        // 先攻のターンが終了 → 後攻のターンに移行
+        player2.turnStatus = 'active';
+        recoverPlayerPP(player2);
+    } else {
+        // 後攻のターンが終了 → 新しいターンラウンドの開始
+        player1.turn += 1;
+        player2.turn += 1;
+        player1.turnStatus = 'active';
+        player2.turnStatus = 'ended';
+        recoverPlayerPP(player1);
+    }
+};

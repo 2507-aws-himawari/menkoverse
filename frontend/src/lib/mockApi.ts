@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import { calculatePPMax, calculatePlayerTurn, getActivePlayer } from './gameLogic';
+import { calculatePPMax, calculatePlayerTurn, getActivePlayer, recoverPlayerPP, switchTurns } from './gameLogic';
 import { mockUsers, mockRooms, findMockRoomById } from './mockData';
 import type {
     MockUser,
@@ -139,8 +139,7 @@ export const mockApi = {
 
         const playerTurn = calculatePlayerTurn(room, playerIndex);
         player.turn = playerTurn;
-        const ppMax = calculatePPMax(playerTurn);
-        player.pp = ppMax;
+        recoverPlayerPP(player);
 
         return player;
     },
@@ -160,18 +159,7 @@ export const mockApi = {
 
         if (!player1 || !player2) return room;
 
-        activePlayer.turnStatus = 'ended';
-
-        if (activePlayer.userId === player1.userId) {
-            player2.turnStatus = 'active';
-            player2.pp = calculatePPMax(player2.turn);
-        } else {
-            player1.turn += 1;
-            player2.turn += 1;
-            player1.turnStatus = 'active';
-            player2.turnStatus = 'ended';
-            player1.pp = calculatePPMax(player1.turn);
-        }
+        switchTurns(room, activePlayer);
         return room;
     },
 
@@ -221,18 +209,8 @@ export const mockApi = {
         if (!player1 || !player2) {
             throw new Error('プレイヤーが不足しています');
         }
-        activePlayer.turnStatus = 'ended';
 
-        if (activePlayer.userId === player1.userId) {
-            player2.turnStatus = 'active';
-            player2.pp = calculatePPMax(player2.turn);
-        } else {
-            player1.turn += 1;
-            player2.turn += 1;
-            player1.turnStatus = 'active';
-            player2.turnStatus = 'ended';
-            player1.pp = calculatePPMax(player1.turn);
-        }
+        switchTurns(room, activePlayer);
         return room;
     },
 };
