@@ -72,10 +72,8 @@ export const mockApi = {
         const shouldShuffle = Math.random() < 0.5;
 
         if (shouldShuffle) {
-            // 新参加プレイヤーを先攻（インデックス0）にする
             room.players.unshift(newPlayer);
         } else {
-            // 新参加プレイヤーを後攻（インデックス1）にする
             room.players.push(newPlayer);
         }
 
@@ -83,7 +81,6 @@ export const mockApi = {
         if (room.players.length === 2) {
             room.status = 'playing';
 
-            // 先攻はターン1でPP=1、turnStatus='active'、後攻はターン1でPP=0、turnStatus='ended'（待機状態）
             room.players.forEach((player: MockRoomPlayer, index: number) => {
                 if (index === 0) {
                     player.turn = 1;
@@ -118,8 +115,6 @@ export const mockApi = {
 
         const player = room.players.find((p: MockRoomPlayer) => p.userId === input.currentUser.id);
         if (!player) return null;
-
-        // HP/PPの上限チェック
         if (input.hp !== undefined) {
             player.hp = Math.max(0, Math.min(input.hp, GAME_CONSTANTS.MAX_HP));
         }
@@ -140,10 +135,8 @@ export const mockApi = {
         const player = room.players.find((p: MockRoomPlayer) => p.userId === input.currentUser.id);
         if (!player) return null;
 
-        // プレイヤーのインデックスを取得
         const playerIndex = room.players.findIndex((p: MockRoomPlayer) => p.userId === input.currentUser.id);
 
-        // 新しいターンでのPP上限まで回復
         const playerTurn = calculatePlayerTurn(room, playerIndex);
         player.turn = playerTurn;
         const ppMax = calculatePPMax(playerTurn);
@@ -157,14 +150,13 @@ export const mockApi = {
         const room = findMockRoomById(input.roomId);
         if (!room) return null;
 
-        // アクティブプレイヤーかチェック
         const activePlayer = getActivePlayer(room);
         if (!activePlayer || activePlayer.userId !== input.currentUser.id) {
             throw new Error('あなたのターンではありません');
         }
 
-        const player1 = room.players[0]; // 先攻
-        const player2 = room.players[1]; // 後攻
+        const player1 = room.players[0];
+        const player2 = room.players[1];
 
         if (!player1 || !player2) return room;
 
