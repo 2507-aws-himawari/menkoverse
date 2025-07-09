@@ -1,6 +1,4 @@
-import Link from "next/link";
-
-import { auth } from "@/server/auth";
+import { auth, signIn } from "@/server/auth";
 import { HydrateClient } from "@/trpc/server";
 
 export default async function Home() {
@@ -12,11 +10,12 @@ export default async function Home() {
 				<h1>
 					Welcome to Menkoverse
 				</h1>
-				<Link
-					href={session ? "/api/auth/signout" : "/api/auth/signin"}
-				>
-					{session ? "Sign out" : "Sign in"}
-				</Link>
+				<button onClick={async () => {
+					"use server";
+					await signIn(undefined, { redirectTo: "/home" });
+				}}>
+					ログイン
+				</button>
 			</div>
 		</HydrateClient>
 	);
