@@ -174,7 +174,6 @@ export const mockApi = {
             player2.turnStatus = 'active';
             player2.pp = calculatePPMax(player2.turn);
         } else {
-            console.log('後攻のターン終了 → 次のラウンド開始');
             player1.turn += 1;
             player2.turn += 1;
             player1.turnStatus = 'active';

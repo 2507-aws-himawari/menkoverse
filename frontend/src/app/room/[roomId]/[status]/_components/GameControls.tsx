@@ -86,19 +86,6 @@ function ActivePlayerControls({
             {/* PP消費デモボタン */}
             <div style={{ marginBottom: '12px' }}>
                 <h4>アクション（PP消費）</h4>
-                <p style={{ fontSize: '12px', color: '#666', margin: '0 0 8px 0' }}>
-                    ターン{currentTurn}のPP上限: {ppMax}
-                </p>
-                {currentPP === 0 && (
-                    <p style={{
-                        fontSize: '14px',
-                        color: '#ff6b6b',
-                        margin: '0 0 8px 0',
-                        fontWeight: 'bold'
-                    }}>
-                        PPが0になりました。「ターン終了」ボタンを押してください。
-                    </p>
-                )}
                 <button
                     onClick={() => onConsumePP(1)}
                     disabled={loading || currentPP < 1}
@@ -163,14 +150,14 @@ function InactivePlayerControls({
                     disabled={loading}
                     style={{
                         backgroundColor: '#orange',
-                        color: 'white',
+                        color: 'red',
                         padding: '6px 12px',
                         border: 'none',
                         borderRadius: '4px',
                         fontSize: '12px'
                     }}
                 >
-                    {loading ? '相手ターン終了中...' : '相手ターンを終了（デモ用）'}
+                    {loading ? '相手ターン終了中...' : '相手ターンを終了ボタンデモ用）'}
                 </button>
             </div>
         </div>
