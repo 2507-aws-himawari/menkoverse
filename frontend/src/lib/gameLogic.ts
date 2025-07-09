@@ -16,7 +16,7 @@ export const calculatePlayerTurn = (room: MockRoom, playerIndex: number): number
     return room.players[playerIndex]?.turn || 1;
 };
 
-// ターン管理の関数
+// ターン管理の関数（ロジック修正版）
 export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
     if (room.players.length !== 2) return null;
 
@@ -25,28 +25,32 @@ export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
 
     if (!player1 || !player2) return null;
 
-    // PP > 0のプレイヤーがアクティブ
-    if (player1.pp > 0 && player2.pp === 0) {
-        return player1; // 先攻がアクティブ
-    } else if (player1.pp === 0 && player2.pp > 0) {
-        return player2; // 後攻がアクティブ
-    } else if (player1.pp > 0 && player2.pp > 0) {
-        // 両方ともPP > 0の場合はターン数で判定
-        if (player1.turn === player2.turn) {
-            return player1; // 同じターンなら先攻がアクティブ
-        } else if (player1.turn > player2.turn) {
-            return player2; // 先攻のターンが多い場合は後攻がアクティブ
-        } else {
-            return player1; // 後攻のターンが多い場合は先攻がアクティブ
-        }
+    // デバッグログを追加
+    console.log('getActivePlayer デバッグ:');
+    console.log(`先攻(${player1.userId}): turn=${player1.turn}, pp=${player1.pp}`);
+    console.log(`後攻(${player2.userId}): turn=${player2.turn}, pp=${player2.pp}`);
+
+    // ターン数を最優先で判定（修正版）
+    if (player1.turn > player2.turn) {
+        // 先攻のターン数が多い = 先攻のターン
+        console.log('判定: 先攻がアクティブ (先攻のターンが進んでいる)');
+        return player1;
+    } else if (player2.turn > player1.turn) {
+        // 後攻のターン数が多い = 後攻のターン
+        console.log('判定: 後攻がアクティブ (後攻のターンが進んでいる)');
+        return player2;
     } else {
-        // 両方ともPP = 0の場合はターン数で判定（PP=0でもターン終了は可能）
-        if (player1.turn === player2.turn) {
-            return player1; // 同じターンなら先攻がアクティブ
-        } else if (player1.turn > player2.turn) {
-            return player2; // 先攻のターンが多い場合は後攻がアクティブ
+        // 同じターン数の場合のみPPで判定
+        if (player1.pp > 0 && player2.pp === 0) {
+            console.log('判定: 先攻がアクティブ (同じターン、先攻PP>0)');
+            return player1;
+        } else if (player1.pp === 0 && player2.pp > 0) {
+            console.log('判定: 後攻がアクティブ (同じターン、後攻PP>0)');
+            return player2;
         } else {
-            return player1; // 後攻のターンが多い場合は先攻がアクティブ
+            // 両方とも同じ状態なら先攻優先
+            console.log('判定: 先攻がアクティブ (同じターン、同じPP状態)');
+            return player1;
         }
     }
 };
