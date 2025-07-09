@@ -14,18 +14,6 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
-
-    @@index([name])
-}
-
 // Necessary for Next auth
 model Account {
     userId                   String
@@ -61,7 +49,7 @@ model User {
     isAdmin       Boolean   @default(false)
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
+    Authenticators Authenticator[]
 }
 
 model VerificationToken {
@@ -70,4 +58,19 @@ model VerificationToken {
     expires    DateTime
 
     @@id([identifier, token])
+}
+
+model Authenticator {
+    credentialID         String  @unique
+    userId               String
+    providerAccountId    String
+    credentialPublicKey  String
+    counter              Int
+    credentialDeviceType String
+    credentialBackedUp   Boolean
+    transports           String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@id([userId, credentialID])
 }
