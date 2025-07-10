@@ -1,8 +1,8 @@
-import type { DefaultSession, NextAuthConfig } from "next-auth";
-import Cognito from "next-auth/providers/cognito";
 import { env } from "@/env";
 import { db } from "@/server/db";
-import { PrismaAdapter } from "@auth/prisma-adapter"
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { DefaultSession, NextAuthConfig } from "next-auth";
+import Cognito from "next-auth/providers/cognito";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
