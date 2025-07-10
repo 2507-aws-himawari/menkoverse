@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useCameraDevices } from '@/hooks/useCameraDevices';
-import { CameraPreview } from '@/components/camera';
+import { useCameraDevices, CameraPreview } from '@/features/camera';
 
 export default function CameraDebugPage() {
   const { devices, isLoading, error: devicesError, refreshDevices } = useCameraDevices();
