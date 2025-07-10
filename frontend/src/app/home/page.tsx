@@ -1,18 +1,10 @@
-import { signOut } from "@/server/auth";
+import { SignOut } from "@/app/components/signOut";
 
 export default function Home() {
 	return (
 		<div>
 			<button type="button">ゲームに参加する</button>
-			<button
-				type="button"
-				onClick={async () => {
-					"use server";
-					await signOut({ redirectTo: "/" });
-				}}
-			>
-				ログアウト
-			</button>
+			<SignOut />
 		</div>
 	);
 }
