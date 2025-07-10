@@ -5,7 +5,7 @@ export function SignIn() {
 		<form
 			action={async () => {
 				"use server";
-				await signIn();
+				await signIn(undefined, { redirectTo: "/home" });
 			}}
 		>
 			<button type="submit">Sign in</button>
