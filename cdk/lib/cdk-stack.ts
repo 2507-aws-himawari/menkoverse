@@ -7,6 +7,11 @@ import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as apprunner from 'aws-cdk-lib/aws-apprunner';
 import * as budgets from 'aws-cdk-lib/aws-budgets';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as eventsources from 'aws-cdk-lib/aws-lambda-event-sources';
+import { WebSocketLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 
 export interface CdkStackProps extends cdk.StackProps {
   /**
@@ -72,6 +77,18 @@ export class CdkStack extends cdk.Stack {
    * VPC
    */
   public readonly vpc: ec2.Vpc;
+  /**
+   * DynamoDB Game Table
+   */
+  public readonly gameTable: dynamodb.Table;
+  /**
+   * WebSocket API
+   */
+  public readonly webSocketApi: apigatewayv2.WebSocketApi;
+  /**
+   * WebSocket API Stage
+   */
+  public readonly webSocketStage: apigatewayv2.WebSocketStage;
 
   public constructor(scope: cdk.App, id: string, props: CdkStackProps = {}) {
     super(scope, id, props);
@@ -499,6 +516,124 @@ export class CdkStack extends cdk.Stack {
       description: 'App Runner Service ID',
       exportName: `${this.stackName}-AppRunnerServiceId`,
       value: this.appRunnerService.attrServiceId,
+    });
+
+    // DynamoDB Game Table
+    this.gameTable = new dynamodb.Table(this, 'GameTable', {
+      tableName: 'menkoverse-game',
+      partitionKey: {
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: 'SK',
+        type: dynamodb.AttributeType.STRING
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY // 開発環境用
+    });
+
+    // GSI for connection management
+    this.gameTable.addGlobalSecondaryIndex({
+      indexName: 'GSI1-PlayerIndex',
+      partitionKey: {
+        name: 'GSI1PK',
+        type: dynamodb.AttributeType.STRING
+      },
+      sortKey: {
+        name: 'GSI1SK',
+        type: dynamodb.AttributeType.STRING
+      }
+    });
+
+    // WebSocket API
+    this.webSocketApi = new apigatewayv2.WebSocketApi(this, 'GameWebSocketApi', {
+      apiName: 'menkoverse-game-websocket',
+      description: 'Menkoverse Game WebSocket API'
+    });
+
+    this.webSocketStage = new apigatewayv2.WebSocketStage(this, 'GameWebSocketStage', {
+      webSocketApi: this.webSocketApi,
+      stageName: 'dev',
+      autoDeploy: true
+    });
+
+    // WebSocket Handler Lambda
+    const webSocketHandler = new lambda.Function(this, 'WebSocketHandler', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/websocket-handler'),
+      environment: {
+        GAME_TABLE_NAME: this.gameTable.tableName
+      }
+    });
+
+    // Stream Processor Lambda
+    const streamProcessor = new lambda.Function(this, 'StreamProcessor', {
+      runtime: lambda.Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('lambda/stream-processor'),
+      environment: {
+        WEBSOCKET_API_ENDPOINT: `${this.webSocketApi.apiEndpoint}/${this.webSocketStage.stageName}`,
+        GAME_TABLE_NAME: this.gameTable.tableName
+      }
+    });
+
+    // Permissions
+    this.gameTable.grantReadWriteData(webSocketHandler);
+    this.gameTable.grantReadData(streamProcessor);
+    this.webSocketApi.grantManageConnections(streamProcessor);
+
+    // DynamoDB Stream Event Source
+    streamProcessor.addEventSource(
+      new eventsources.DynamoEventSource(this.gameTable, {
+        startingPosition: lambda.StartingPosition.LATEST,
+        batchSize: 10
+      })
+    );
+
+    // WebSocket API Routes
+    const connectIntegration = new WebSocketLambdaIntegration(
+      'ConnectIntegration',
+      webSocketHandler
+    );
+
+    const disconnectIntegration = new WebSocketLambdaIntegration(
+      'DisconnectIntegration',
+      webSocketHandler
+    );
+
+    const defaultIntegration = new WebSocketLambdaIntegration(
+      'DefaultIntegration',
+      webSocketHandler
+    );
+
+    this.webSocketApi.addRoute('$connect', { integration: connectIntegration });
+    this.webSocketApi.addRoute('$disconnect', { integration: disconnectIntegration });
+    this.webSocketApi.addRoute('$default', { integration: defaultIntegration });
+
+    // Game Infrastructure Outputs
+    new cdk.CfnOutput(this, 'CfnOutputGameTableName', {
+      key: 'GameTableName',
+      description: 'DynamoDB Game Table Name',
+      exportName: `${this.stackName}-GameTableName`,
+      value: this.gameTable.tableName,
+    });
+
+    new cdk.CfnOutput(this, 'CfnOutputWebSocketApiEndpoint', {
+      key: 'WebSocketApiEndpoint',
+      description: 'WebSocket API Endpoint',
+      exportName: `${this.stackName}-WebSocketApiEndpoint`,
+      value: this.webSocketApi.apiEndpoint,
+    });
+
+    new cdk.CfnOutput(this, 'CfnOutputWebSocketApiId', {
+      key: 'WebSocketApiId',
+      description: 'WebSocket API ID',
+      exportName: `${this.stackName}-WebSocketApiId`,
+      value: this.webSocketApi.apiId,
     });
   }
 }
