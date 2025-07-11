@@ -175,18 +175,18 @@ export default function CameraDebugPage() {
           <h3 className="text-lg font-medium mb-2">テスト用サンプルマーカー</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="text-center">
-              <h4 className="font-medium mb-2">マーカー ID: 1000</h4>
+              <h4 className="font-medium mb-2">マーカー ID: 0</h4>
               <img 
-                src="/markers/4x4_1000-0.svg" 
+                src="/markers/0.png" 
                 alt="ArUco Marker 1000"
                 className="w-32 h-32 mx-auto border"
               />
               <p className="text-sm text-gray-600 mt-1">印刷して使用してください</p>
             </div>
             <div className="text-center">
-              <h4 className="font-medium mb-2">マーカー ID: 1001</h4>
+              <h4 className="font-medium mb-2">マーカー ID: 1</h4>
               <img 
-                src="/markers/4x4_1000-1.svg" 
+                src="/markers/1.png" 
                 alt="ArUco Marker 1001"
                 className="w-32 h-32 mx-auto border"
               />
