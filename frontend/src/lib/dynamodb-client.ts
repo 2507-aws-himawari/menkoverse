@@ -1,14 +1,15 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import type { CreateRoomRequest, JoinRoomRequest, CreateRoomResponse, JoinRoomResponse } from '@/types/game';
+import { checkAWSAvailability, mockRooms } from './mock-data';
 
 // DynamoDB client configuration
+// AWS SDK will automatically use credentials from:
+// 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+// 2. AWS credentials file (~/.aws/credentials)
+// 3. IAM roles (when running on EC2/Lambda)
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'ap-northeast-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
@@ -26,6 +27,25 @@ const getTableName = () => {
 export async function createRoom(request: CreateRoomRequest): Promise<CreateRoomResponse> {
   const roomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const timestamp = Date.now();
+
+  // Check if AWS is available
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, simulating room creation');
+    // Add to mock data for this session
+    const newRoom = {
+      id: roomId,
+      name: request.roomName,
+      playerCount: 1,
+      maxPlayers: request.maxPlayers || 4,
+      status: 'waiting',
+      ownerId: request.ownerId,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+    mockRooms.push(newRoom);
+    return { roomId, roomName: request.roomName };
+  }
 
   try {
     // Room metadata
@@ -79,6 +99,24 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
 // 部屋参加
 export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomResponse> {
   const timestamp = Date.now();
+
+  // Check if AWS is available
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, simulating room join');
+    // Find room in mock data
+    const room = mockRooms.find(r => r.id === request.roomId);
+    if (!room) {
+      throw new Error('Room not found');
+    }
+    if (room.playerCount >= room.maxPlayers) {
+      throw new Error('Room is full');
+    }
+    // Update mock data
+    room.playerCount++;
+    room.updatedAt = timestamp;
+    return { success: true, roomId: request.roomId };
+  }
 
   try {
     // Get room info
@@ -163,6 +201,13 @@ export async function joinRoom(request: JoinRoomRequest): Promise<JoinRoomRespon
 
 // 部屋一覧取得
 export async function listRooms() {
+  // Check if AWS is available
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, returning mock data');
+    return mockRooms;
+  }
+
   try {
     // Since we don't have GSI2-RoomStatusIndex yet, use scan with filter
     const response = await docClient.send(new ScanCommand({
@@ -193,7 +238,8 @@ export async function listRooms() {
     return rooms;
   } catch (error) {
     console.error('Error listing rooms:', error);
-    throw new Error('Failed to fetch rooms');
+    console.log('Falling back to mock data');
+    return mockRooms;
   }
 }
 
