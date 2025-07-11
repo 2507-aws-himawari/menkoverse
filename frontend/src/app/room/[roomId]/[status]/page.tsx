@@ -1,9 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useRoomData, useGameActions } from './_hooks';
 import { RoomDisplay, GameControls } from './_components';
 
 export default function RoomStatusPage() {
+    const router = useRouter();
     const { room, loading, error, currentUser, clearError } = useRoomData();
     const gameActions = useGameActions();
 
@@ -15,7 +17,7 @@ export default function RoomStatusPage() {
                     <p>{error}</p>
                     <button onClick={() => {
                         clearError();
-                        window.location.reload();
+                        router.refresh();
                     }}>
                         再読み込み
                     </button>
