@@ -45,12 +45,14 @@ export default function JoinRoomPage() {
 
         try {
             const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
-            if (roomData) {
-                const targetUrl = `/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`;
-                router.push(targetUrl);
-            } else {
+
+            if (!roomData) {
                 setErrorMessage('部屋の情報を取得できませんでした');
+                return;
             }
+
+            const targetUrl = `/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`;
+            router.push(targetUrl);
         } catch (error) {
             setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
         } finally {
@@ -126,10 +128,14 @@ export default function JoinRoomPage() {
                                                         });
 
                                                         const roomData = await mockApi.getRoom({ roomId: room.id });
-                                                        if (roomData) {
-                                                            const targetUrl = `/room/${encodeURIComponent(room.id)}/${roomData.status}`;
-                                                            router.push(targetUrl);
+
+                                                        if (!roomData) {
+                                                            setErrorMessage('部屋の情報を取得できませんでした');
+                                                            return;
                                                         }
+
+                                                        const targetUrl = `/room/${encodeURIComponent(room.id)}/${roomData.status}`;
+                                                        router.push(targetUrl);
                                                     } catch (error) {
                                                         setErrorMessage(error instanceof Error ? error.message : '参加に失敗しました');
                                                     } finally {
