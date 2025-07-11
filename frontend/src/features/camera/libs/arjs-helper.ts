@@ -49,13 +49,24 @@ export class ARJSHelper {
         console.warn('Canvas size is 0, this may cause divide by zero errors');
       }
 
+      // Canvas要素のCSS設定を確保（offsetWidthとoffsetHeightが0の問題を解決）
+      if (canvas.offsetWidth === 0 || canvas.offsetHeight === 0) {
+        canvas.style.width = '640px';
+        canvas.style.height = '480px';
+        canvas.style.display = 'block';
+        console.log('Canvas CSS styling applied');
+      }
+
       // ArToolkitContextの初期化
       this.arToolkitContext = new (window as any).THREEx.ArToolkitContext({
         cameraParametersUrl: 'https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.5/data/data/camera_para.dat',
-        detectionMode: 'mono', // 'mono_and_matrix' から 'mono' に変更してより安定化
+        detectionMode: 'mono_and_matrix', // ArUcoマーカー検出のために必要
         matrixCodeType: config.dictionaryName, // '4x4_1000'
         canvasWidth: Math.max(canvas.width, 640), // 最小サイズを保証
         canvasHeight: Math.max(canvas.height, 480), // 最小サイズを保証
+        maxDetectionRate: 60, // 検出レートの制限
+        patternRatio: 0.5, // パターン比率
+        labelingMode: 1, // ラベリングモード
       });
 
       await new Promise((resolve, reject) => {
@@ -72,6 +83,15 @@ export class ARJSHelper {
           });
 
           console.log('ArToolkitContext and ArToolkitSource initialized successfully');
+          
+          // ArToolkitContextの詳細状態を確認
+          console.log('ArToolkitContext details:', {
+            initialized: this.arToolkitContext.initialized,
+            arController: !!this.arToolkitContext.arController,
+            parameters: this.arToolkitContext.parameters,
+            detectionMode: this.arToolkitContext.parameters?.detectionMode
+          });
+          
           resolve(true);
         }, reject);
       });
@@ -175,12 +195,20 @@ export class ARJSHelper {
       // フレーム解析
       this.arToolkitContext.update(videoElement);
 
+      // ArToolkitContextの更新後の状態を確認
+      console.log('ArToolkitContext update result:', {
+        arController: !!this.arToolkitContext.arController,
+        hasMarkerNum: this.arToolkitContext.arController && 
+                     typeof this.arToolkitContext.arController.getMarkerNum === 'function'
+      });
+
       // 検出されたマーカーを取得
       const detectedMarkers = [];
       
       // THREEx.ArToolkitContext の新しい API を使用
       if (this.arToolkitContext.arController) {
         const markerNum = this.arToolkitContext.arController.getMarkerNum();
+        console.log('Detected markers count:', markerNum);
         
         for (let i = 0; i < markerNum; i++) {
           const markerMatrix = this.arToolkitContext.arController.getTransformationMatrix(i);
@@ -189,6 +217,12 @@ export class ARJSHelper {
           const confidence = this.arToolkitContext.arController.getMarkerConfidence ? 
                             this.arToolkitContext.arController.getMarkerConfidence(i) : 1.0;
 
+          console.log(`Marker ${i}:`, {
+            id: markerId,
+            confidence: confidence,
+            hasMatrix: !!markerMatrix
+          });
+
           detectedMarkers.push({
             id: markerId,
             matrix: markerMatrix,
@@ -196,6 +230,8 @@ export class ARJSHelper {
             timestamp: Date.now(),
           });
         }
+      } else {
+        console.warn('ArToolkitContext.arController is not available');
       }
 
       return detectedMarkers;
