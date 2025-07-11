@@ -1,14 +1,16 @@
-import { signOut } from "@/server/auth";
+'use client';
+
+import { signOutAction } from '@/app/actions/auth';
+import { useTransition } from 'react';
 
 export function SignOut() {
-	return (
-		<form
-			action={async () => {
-				"use server";
-				await signOut({ redirectTo: "/" });
-			}}
-		>
-			<button type="submit">Sign Out</button>
-		</form>
-	);
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <form action={signOutAction}>
+      <button type="submit" disabled={isPending}>
+        {isPending ? 'サインアウト中...' : 'サインアウト'}
+      </button>
+    </form>
+  );
 }

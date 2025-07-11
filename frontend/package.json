@@ -25,6 +25,7 @@
 		"@t3-oss/env-nextjs": "^0.12.0",
 		"@tanstack/react-query": "^5.69.0",
 		"ar.js": "^2.2.2",
+		"jotai": "^2.12.5",
 		"next": "^15.2.3",
 		"next-auth": "5.0.0-beta.25",
 		"react": "^19.0.0",
@@ -32,6 +33,7 @@
 		"react-hook-form": "^7.60.0",
 		"server-only": "^0.0.1",
 		"superjson": "^2.2.1",
+		"swr": "^2.3.4",
 		"three": "^0.178.0",
 		"zod": "^3.24.2"
 	},
