@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom, useSetAtom } from 'jotai';
-import { mockApi } from '../../../../../lib/mockApi';
+import { mockApi } from '@/lib/mockApi';
 import {
     currentRoomAtom,
     loadingAtom,
@@ -11,7 +11,7 @@ import {
     endLoadingAtom,
     setErrorAndEndLoadingAtom,
     setRoomAtom
-} from '../../../../../lib/atoms';
+} from '@/lib/atoms';
 
 export function useRoomData() {
     const params = useParams();

@@ -1,5 +1,5 @@
 import { useAtom, useSetAtom } from 'jotai';
-import { mockApi } from '../../../../../lib/mockApi';
+import { mockApi } from '@/lib/mockApi';
 import {
     currentRoomAtom,
     currentUserAtom,
@@ -7,7 +7,7 @@ import {
     endLoadingAtom,
     setErrorAndEndLoadingAtom,
     setRoomAtom
-} from '../../../../../lib/atoms';
+} from '@/lib/atoms';
 
 export function useGameActions() {
     const [room] = useAtom(currentRoomAtom);

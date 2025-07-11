@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { mockApi } from '../../../lib/mockApi';
-import { mockUsers, getPlayersByRoomId } from '../../../lib/mockData';
-import { GAME_CONSTANTS } from '../../../lib/constants';
-import { currentUserAtom, availableRoomsAtom } from '../../../lib/atoms';
+import { mockApi } from '@/lib/mockApi';
+import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
+import { currentUserAtom, availableRoomsAtom } from '@/lib/atoms';
 
 export default function JoinRoomPage() {
     const [roomId, setRoomId] = useState('');
@@ -45,11 +44,6 @@ export default function JoinRoomPage() {
         setErrorMessage('');
 
         try {
-            const result = await mockApi.joinRoom({
-                roomId: roomId.trim(),
-                currentUser
-            });
-
             const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
             if (roomData) {
                 const targetUrl = `/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`;

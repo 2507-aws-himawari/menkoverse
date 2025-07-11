@@ -1,7 +1,7 @@
-import { getUserById, getActivePlayer, calculatePPMax } from '../../../../../lib/gameLogic';
-import { GAME_CONSTANTS } from '../../../../../lib/constants';
-import { mockUsers, getPlayersByRoomId } from '../../../../../lib/mockData';
-import type { MockRoom, MockRoomPlayer } from '../../../../../lib/types';
+import { getUserById, getActivePlayer, calculatePPMax } from '@/lib/gameLogic';
+import { GAME_CONSTANTS } from '@/lib/constants';
+import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
+import type { MockRoom, MockRoomPlayer } from '@/lib/types';
 
 interface RoomDisplayProps {
     room: MockRoom;
