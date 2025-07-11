@@ -3,6 +3,7 @@ import { CoreStack } from './core-stack';
 import { AuthStack } from './auth-stack';
 import { DataStack } from './data-stack';
 import { AppStack } from './app-stack';
+import { RealtimeStack } from './realtime-stack';
 
 export interface MenkoverseStackProps extends cdk.StackProps {
   /**
@@ -51,6 +52,7 @@ export class MenkoverseApp extends cdk.Stack {
   public readonly authStack: AuthStack;
   public readonly dataStack: DataStack;
   public readonly appStack: AppStack;
+  public readonly realtimeStack: RealtimeStack;
 
   public constructor(scope: cdk.App, id: string, props: MenkoverseStackProps = {}) {
     super(scope, id, props);
@@ -79,7 +81,13 @@ export class MenkoverseApp extends cdk.Stack {
       databaseName: props.databaseName,
     });
 
-    // 4. App Stack (App Runner) - Depends on all other stacks
+    // 4. Realtime Stack (DynamoDB + WebSocket) - Independent
+    this.realtimeStack = new RealtimeStack(scope, `${stackNamePrefix}-Realtime`, {
+      ...props,
+      environment: envName,
+    });
+
+    // 5. App Stack (App Runner) - Depends on all other stacks
     this.appStack = new AppStack(scope, `${stackNamePrefix}-App`, {
       ...props,
       vpc: this.coreStack.vpc,
@@ -111,6 +119,12 @@ export class MenkoverseApp extends cdk.Stack {
       key: 'HostedUIUrl',
       description: 'Cognito Hosted UI URL',
       value: this.authStack.hostedUiUrl,
+    });
+
+    new cdk.CfnOutput(this, 'WebSocketUrl', {
+      key: 'WebSocketUrl',
+      description: 'WebSocket API URL for real-time communication',
+      value: `${this.realtimeStack.webSocketApi.apiEndpoint}/${envName}`,
     });
   }
 }
