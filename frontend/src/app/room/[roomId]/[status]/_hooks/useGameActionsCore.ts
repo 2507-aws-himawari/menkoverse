@@ -2,10 +2,7 @@ import { useSWRConfig } from 'swr';
 import { mockApi } from '@/lib/mockApi';
 import type { MockUser } from '@/lib/types';
 
-/**
- * ゲームアクションを実行するSWRカスタムフック
- */
-export function useGameActionsSWR(roomId: string | null) {
+export function useGameActionsCore(roomId: string | null) {
     const { mutate } = useSWRConfig();
 
     const updateRoomCache = async (roomId: string) => {

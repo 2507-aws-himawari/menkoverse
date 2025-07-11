@@ -1,6 +1,6 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { useRoomSWR } from './useRoomSWR';
+import { useRoom } from './useRoom';
 import { currentUserAtom, errorAtom, } from '@/lib/atoms';
 
 export function useRoomData() {
@@ -11,7 +11,7 @@ export function useRoomData() {
     const roomId = rawRoomId ? decodeURIComponent(rawRoomId) : '';
 
     // room情報を取得
-    const { room, isLoading, error: roomError } = useRoomSWR(roomId || null);
+    const { room, isLoading, error: roomError } = useRoom(roomId || null);
 
     const [currentUser] = useAtom(currentUserAtom);
     const [, setError] = useAtom(errorAtom);

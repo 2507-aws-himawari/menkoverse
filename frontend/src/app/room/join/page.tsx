@@ -6,14 +6,14 @@ import { useAtom } from 'jotai';
 import { mockApi } from '@/lib/mockApi';
 import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
 import { currentUserAtom } from '@/lib/atoms';
-import { useRoomsSWR } from './_hooks/useRoomsSWR';
+import { useRooms } from './_hooks/useRooms';
 
 export default function JoinRoomPage() {
     const [roomId, setRoomId] = useState('');
     const [isJoining, setIsJoining] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [currentUser, setCurrentUser] = useAtom(currentUserAtom);
-    const { rooms: availableRooms, isLoading: roomsLoading, error: roomsError } = useRoomsSWR();
+    const { rooms: availableRooms, isLoading: roomsLoading, error: roomsError } = useRooms();
     const router = useRouter();
 
     const handleUserChange = (userId: string) => {

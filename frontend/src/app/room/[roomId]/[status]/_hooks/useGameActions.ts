@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useParams } from 'next/navigation';
-import { useGameActionsSWR } from './useGameActionsSWR';
+import { useGameActionsCore } from './useGameActionsCore';
 import {
     currentUserAtom,
     loadingAtom,
@@ -16,7 +16,7 @@ export function useGameActions() {
     const [loading, setLoading] = useAtom(loadingAtom);
     const [, setError] = useAtom(errorAtom);
 
-    const gameActions = useGameActionsSWR(roomId);
+    const gameActions = useGameActionsCore(roomId);
 
     const handleWithLoading = async (action: () => Promise<void>) => {
         try {

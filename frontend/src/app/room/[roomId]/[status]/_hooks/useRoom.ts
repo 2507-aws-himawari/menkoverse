@@ -2,7 +2,8 @@ import useSWR from 'swr';
 import { mockApi } from '@/lib/mockApi';
 import type { MockRoom } from '@/lib/types';
 
-export function useRoomSWR(roomId: string | null) {
+//特定の部屋の情報を取得するSWR
+export function useRoom(roomId: string | null) {
     const { data, error, isLoading, mutate } = useSWR<MockRoom | null, Error>(
         roomId ? `/api/rooms/${roomId}` : null,
         () => roomId ? mockApi.getRoom({ roomId }) : null,
