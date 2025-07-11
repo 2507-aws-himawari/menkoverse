@@ -11,9 +11,12 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     // プレイヤー情報を取得
     const roomPlayers = getPlayersByRoomId(room.id);
 
+    const Turn = roomPlayers.length > 0 ? Math.max(...roomPlayers.map(p => p.turn)) : 1;
+
     return (
         <div>
             <h1>ゲームルーム</h1>
+            <div style={{ fontSize: '20px' }}>ターン: {Turn}</div>
             <div>
                 {roomPlayers.map((player: MockRoomPlayer, index: number) => {
                     const user = getUserById(player.userId, mockUsers);
@@ -31,7 +34,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                     {room.status === 'playing' && (
                                         <span style={{ marginLeft: '8px', fontSize: '14px' }}>
                                             ({playerPosition})
-                                            {isActivePlayer && <span style={{ color: 'green' }}> 【アクティブ】</span>}
+                                            {isActivePlayer && <span style={{ color: 'green' }}> 【行動】</span>}
                                         </span>
                                     )}
                                 </h3>
@@ -43,7 +46,6 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 <div>
                                     <p>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</p>
                                     <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
-                                    <p>ターン: {player.turn}</p>
                                 </div>
                                 <p>
                                     {room.status === 'waiting' ? '待機中...' :
