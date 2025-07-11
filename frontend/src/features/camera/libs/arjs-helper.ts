@@ -236,10 +236,10 @@ export class ARJSHelper {
           const confidence = this.arToolkitContext.arController.getMarkerConfidence ? 
                             this.arToolkitContext.arController.getMarkerConfidence(i) : 1.0;
 
-          // ArUcoマーカーID（4x4_BCH_13_9_3は0-1023の範囲）
-          // 対象マーカーID（1000, 1001）のみフィルタリング
-          if ([1000, 1001].includes(markerId)) {
-            console.log(`ArUco marker detected:`, {
+          // AR.js Barcodeマーカー（4x4_BCH_13_9_3は0-511の範囲）
+          // テスト用マーカーID（0, 1）でフィルタリング
+          if ([0, 1].includes(markerId)) {
+            console.log(`AR.js Barcode marker detected:`, {
               id: markerId,
               confidence: confidence,
               hasMatrix: !!markerMatrix

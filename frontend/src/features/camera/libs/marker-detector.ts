@@ -97,8 +97,8 @@ export class MarkerDetector {
   }
 
   private isValidMarker(marker: DetectedMarker): boolean {
-    // 対象マーカーID（1000, 1001）のチェック
-    if (![1000, 1001].includes(marker.id)) {
+    // 対象マーカーID（0, 1）のチェック（AR.js Barcodeマーカー用）
+    if (![0, 1].includes(marker.id)) {
       return false;
     }
 
