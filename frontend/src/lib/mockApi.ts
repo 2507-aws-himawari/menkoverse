@@ -20,7 +20,8 @@ import type {
     StartTurnInput,
     EndTurnInput,
     ConsumePPInput,
-    ForceEndOpponentTurnInput
+    ForceEndOpponentTurnInput,
+    DamagePlayerInput
 } from './types';
 
 export const mockApi = {
@@ -227,5 +228,34 @@ export const mockApi = {
 
         switchTurns(room, activePlayer);
         return room;
+    },
+
+    // HP減少処理
+    damagePlayer: async (input: DamagePlayerInput): Promise<MockRoomPlayer | null> => {
+        const room = getRoomById(input.roomId);
+        if (!room) return null;
+
+        const targetPlayer = getPlayerByUserIdAndRoomId(input.targetUserId, input.roomId);
+        if (!targetPlayer) return null;
+
+        const currentPlayer = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!currentPlayer) return null;
+
+        // アクティブプレイヤーかチェック
+        const activePlayer = getActivePlayer(room);
+        if (!activePlayer || activePlayer.userId !== input.currentUser.id) {
+            throw new Error('あなたのターンではありません');
+        }
+
+        // ダメージ適用
+        const newHp = Math.max(0, targetPlayer.hp - input.damage);
+        targetPlayer.hp = newHp;
+
+        // 勝敗判定
+        if (newHp <= 0) {
+            room.status = 'finish';
+        }
+
+        return targetPlayer;
     },
 };

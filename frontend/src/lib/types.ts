@@ -63,3 +63,10 @@ export interface ForceEndOpponentTurnInput {
     roomId: string;
     currentUser: MockUser;
 }
+
+export interface DamagePlayerInput {
+    roomId: string;
+    targetUserId: string;
+    damage: number;
+    currentUser: MockUser;
+}
