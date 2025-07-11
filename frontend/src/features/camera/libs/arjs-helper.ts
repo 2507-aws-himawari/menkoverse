@@ -4,8 +4,22 @@ export class ARJSHelper {
   private arToolkitContext: any = null;
   private arToolkitSource: any = null;
   private initialized = false;
+  private isInitializing = false; // 初期化中フラグを追加
 
   async initialize(canvas: HTMLCanvasElement, video: HTMLVideoElement, config: ArUcoMarkerConfig) {
+    // 重複初期化を防ぐ
+    if (this.initialized) {
+      console.warn('AR.js is already initialized');
+      return true;
+    }
+
+    if (this.isInitializing) {
+      console.warn('AR.js is currently initializing');
+      return false;
+    }
+
+    this.isInitializing = true;
+
     try {
       // AR.jsの動的インポート（ブラウザでのみ実行）
       if (typeof window === 'undefined') {
@@ -61,7 +75,7 @@ export class ARJSHelper {
       this.arToolkitContext = new (window as any).THREEx.ArToolkitContext({
         cameraParametersUrl: 'https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.5/data/data/camera_para.dat',
         detectionMode: 'mono_and_matrix', // ArUcoマーカー検出のために必要
-        matrixCodeType: config.dictionaryName, // '4x4_1000'
+        matrixCodeType: '4x4_BCH_13_9_3', // ArUcoマーカー用の正しいタイプ
         canvasWidth: Math.max(canvas.width, 640), // 最小サイズを保証
         canvasHeight: Math.max(canvas.height, 480), // 最小サイズを保証
         maxDetectionRate: 60, // 検出レートの制限
@@ -72,6 +86,7 @@ export class ARJSHelper {
       await new Promise((resolve, reject) => {
         this.arToolkitContext.init(() => {
           this.initialized = true;
+          this.isInitializing = false;
           
           // ArToolkitSourceの初期化も追加
           this.arToolkitSource = new (window as any).THREEx.ArToolkitSource({
@@ -93,11 +108,15 @@ export class ARJSHelper {
           });
           
           resolve(true);
-        }, reject);
+        }, (error: any) => {
+          this.isInitializing = false;
+          reject(error);
+        });
       });
 
       return true;
     } catch (error) {
+      this.isInitializing = false;
       console.error('AR.js initialization failed:', error);
       throw error;
     }
@@ -217,18 +236,22 @@ export class ARJSHelper {
           const confidence = this.arToolkitContext.arController.getMarkerConfidence ? 
                             this.arToolkitContext.arController.getMarkerConfidence(i) : 1.0;
 
-          console.log(`Marker ${i}:`, {
-            id: markerId,
-            confidence: confidence,
-            hasMatrix: !!markerMatrix
-          });
+          // ArUcoマーカーID（4x4_BCH_13_9_3は0-1023の範囲）
+          // 対象マーカーID（1000, 1001）のみフィルタリング
+          if ([1000, 1001].includes(markerId)) {
+            console.log(`ArUco marker detected:`, {
+              id: markerId,
+              confidence: confidence,
+              hasMatrix: !!markerMatrix
+            });
 
-          detectedMarkers.push({
-            id: markerId,
-            matrix: markerMatrix,
-            confidence: confidence,
-            timestamp: Date.now(),
-          });
+            detectedMarkers.push({
+              id: markerId,
+              matrix: markerMatrix,
+              confidence: confidence,
+              timestamp: Date.now(),
+            });
+          }
         }
       } else {
         console.warn('ArToolkitContext.arController is not available');
@@ -269,6 +292,7 @@ export class ARJSHelper {
       this.arToolkitSource = null;
     }
     this.initialized = false;
+    this.isInitializing = false;
   }
 }
 

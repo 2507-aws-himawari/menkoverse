@@ -30,6 +30,7 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
 
     if (isInitialized) {
       console.warn('ArUco detector is already initialized');
+      return;
     }
 
     try {
