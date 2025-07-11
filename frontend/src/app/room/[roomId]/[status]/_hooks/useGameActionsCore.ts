@@ -67,10 +67,39 @@ export function useGameActionsCore(roomId: string | null) {
         }
     };
 
+    // プレイヤーIDを指定してダメージ
+    const handleDamagePlayer = async (currentUser: MockUser, targetUserId: string, damage: number): Promise<void> => {
+        if (!roomId) return;
+        try {
+            await mockApi.damagePlayer({
+                roomId,
+                currentUser,
+                targetUserId,
+                damage
+            });
+            await updateRoomCache(roomId);
+        } catch (error) {
+            throw error;
+        }
+    };
+
+    // 自分にダメージ
+    const handleDamageToSelf = async (currentUser: MockUser, damage: number): Promise<void> => {
+        await handleDamagePlayer(currentUser, currentUser.id, damage);
+    };
+
+    // 相手にダメージ
+    const handleDamageToOpponent = async (currentUser: MockUser, opponentUserId: string, damage: number): Promise<void> => {
+        await handleDamagePlayer(currentUser, opponentUserId, damage);
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
         handleForceEndOpponentTurn,
         handleConsumePP,
+        handleDamagePlayer,
+        handleDamageToSelf,
+        handleDamageToOpponent,
     };
 }

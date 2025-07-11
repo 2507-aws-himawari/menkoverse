@@ -56,10 +56,31 @@ export function useGameActions() {
         });
     };
 
+    const handleDamagePlayer = async (targetUserId: string, damage: number) => {
+        await handleWithLoading(async () => {
+            await gameActions.handleDamagePlayer(currentUser, targetUserId, damage);
+        });
+    };
+
+    const handleDamageToSelf = async (damage: number) => {
+        await handleWithLoading(async () => {
+            await gameActions.handleDamageToSelf(currentUser, damage);
+        });
+    };
+
+    const handleDamageToOpponent = async (opponentUserId: string, damage: number) => {
+        await handleWithLoading(async () => {
+            await gameActions.handleDamageToOpponent(currentUser, opponentUserId, damage);
+        });
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
         handleForceEndOpponentTurn,
-        handleConsumePP
+        handleConsumePP,
+        handleDamagePlayer,
+        handleDamageToSelf,
+        handleDamageToOpponent,
     };
 }
