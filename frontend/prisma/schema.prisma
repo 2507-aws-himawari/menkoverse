@@ -74,3 +74,11 @@ model Authenticator {
 
     @@id([userId, credentialID])
 }
+
+model Follower {
+    id        String   @id @unique
+    name    String @unique
+    cost    Int
+    attack  Int
+    hp      Int
+}
