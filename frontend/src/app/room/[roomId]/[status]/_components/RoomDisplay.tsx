@@ -44,14 +44,9 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                     </span>
                                 )}
                                 <div>
-                                    <p>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</p>
+                                    <span>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</span>
                                     <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
                                 </div>
-                                <p>
-                                    {room.status === 'waiting' ? '待機中...' :
-                                        room.status === 'playing' ? 'プレイ中' :
-                                            room.status === 'finish' ? 'ゲーム終了' : '状態不明'}
-                                </p>
                             </div>
                         </div>
                     );
@@ -83,14 +78,9 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
 
                 {room.status === 'finish' && (
                     <div>
-                        <h2>ゲーム終了</h2>
-                        <div>
-                            <p>参加者: {roomPlayers.length}/2</p>
-                            <p>ゲームが終了しました</p>
-                        </div>
                     </div>
                 )}
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

@@ -1,5 +1,6 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
+import { useEffect } from 'react';
 import { useRoom } from './useRoom';
 import { currentUserAtom, errorAtom, } from '@/lib/atoms';
 
@@ -16,15 +17,18 @@ export function useRoomData() {
     const [currentUser] = useAtom(currentUserAtom);
     const [, setError] = useAtom(errorAtom);
 
-    if (room && room.status !== status) {
-        const newUrl = `/room/${encodeURIComponent(roomId)}/${room.status}`;
-        router.replace(newUrl);
-    }
+    useEffect(() => {
+        if (room && room.status !== status) {
+            const newUrl = `/room/${encodeURIComponent(roomId)}/${room.status}`;
+            router.replace(newUrl);
+        }
+    }, [room, status, roomId, router]);
 
-    // エラーハンドリング
-    if (roomError) {
-        setError(roomError.message);
-    }
+    useEffect(() => {
+        if (roomError) {
+            setError(roomError.message);
+        }
+    }, [roomError, setError]);
 
     return {
         room,

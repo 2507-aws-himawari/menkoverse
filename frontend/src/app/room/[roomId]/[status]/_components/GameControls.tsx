@@ -10,6 +10,9 @@ interface GameControlsProps {
     onEndTurn: () => Promise<void>;
     onForceEndOpponentTurn: () => Promise<void>;
     onStartTurn: () => Promise<void>;
+    onDamagePlayer: (targetUserId: string, damage: number) => Promise<void>;
+    onDamageToSelf?: (damage: number) => Promise<void>;
+    onDamageToOpponent?: (opponentUserId: string, damage: number) => Promise<void>;
 }
 
 export function GameControls({
@@ -19,7 +22,10 @@ export function GameControls({
     onConsumePP,
     onEndTurn,
     onForceEndOpponentTurn,
-    onStartTurn
+    onStartTurn,
+    onDamagePlayer,
+    onDamageToSelf,
+    onDamageToOpponent
 }: GameControlsProps) {
     const activePlayer = getActivePlayer(room);
     const activeUser = activePlayer ? getUserById(activePlayer.userId, mockUsers) : null;
@@ -49,6 +55,9 @@ export function GameControls({
                         loading={loading}
                         onConsumePP={onConsumePP}
                         onEndTurn={onEndTurn}
+                        onDamagePlayer={onDamagePlayer}
+                        onDamageToSelf={onDamageToSelf}
+                        onDamageToOpponent={onDamageToOpponent}
                     />
                 ) : (
                     <InactivePlayerControls
@@ -68,6 +77,9 @@ interface ActivePlayerControlsProps {
     loading: boolean;
     onConsumePP: (ppCost: number) => Promise<void>;
     onEndTurn: () => Promise<void>;
+    onDamagePlayer: (targetUserId: string, damage: number) => Promise<void>;
+    onDamageToSelf?: (damage: number) => Promise<void>;
+    onDamageToOpponent?: (opponentUserId: string, damage: number) => Promise<void>;
 }
 
 function ActivePlayerControls({
@@ -75,16 +87,40 @@ function ActivePlayerControls({
     currentUser,
     loading,
     onConsumePP,
-    onEndTurn
+    onEndTurn,
+    onDamagePlayer,
+    onDamageToSelf,
+    onDamageToOpponent
 }: ActivePlayerControlsProps) {
     const currentPlayer = getPlayerByUserIdAndRoomId(currentUser.id, room.id);
     const currentPP = currentPlayer?.pp || 0;
     const currentTurn = currentPlayer?.turn || 1;
     const ppMax = calculatePPMax(currentTurn);
 
+    // 相手プレイヤーを取得
+    const roomPlayers = getPlayersByRoomId(room.id);
+    const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
+
     return (
         <div style={{ marginTop: '16px' }}>
             <h3>あなたのターンです</h3>
+
+            {/* HP減少デモボタン */}
+            <div style={{ marginBottom: '12px' }}>
+                <h4>リーダーにダメージ</h4>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {onDamageToSelf && (
+                        <button onClick={() => onDamageToSelf(1)} disabled={loading}>
+                            自分に1ダメージ
+                        </button>
+                    )}
+                    {opponentPlayer && onDamageToOpponent && (
+                        <button onClick={() => onDamageToOpponent(opponentPlayer.userId, 1)} disabled={loading}>
+                            相手に1ダメージ
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {/* PP消費デモボタン */}
             <div style={{ marginBottom: '12px' }}>
