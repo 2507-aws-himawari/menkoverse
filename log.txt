@@ -1,5 +1,14 @@
-Starting marker detection with options: {enabled: true, sensitivity: 0.5, frameRate: 15}
-marker-detector.ts:60 Processing detection frame: {currentTime: 2445.766, lastFrameTime: 0, frameInterval: 66.66666666666667, timeSinceLastFrame: 2445.766}
-arjs-helper.ts:196 Video element state: {videoWidth: 640, videoHeight: 480, readyState: 4, currentTime: 0.783985, paused: false}
-marker-detector.ts:71 Detection result: {rawMarkersCount: 0, processedMarkersCount: 0, rawMarkers: Array(0)}processedMarkersCount: 0rawMarkers: []rawMarkersCount: 0[[Prototype]]: Object
-marker-detector.ts:89 Skipping frame due to rate limit
+Starting initial requestAnimationFrame
+marker-detector.ts:123 Initial requestAnimationFrame scheduled, ID: 8
+marker-detector.ts:51 detectFrame called: {currentTime: 1814.7, isRunning: true, lastFrameTime: 0, frameInterval: 66.66666666666667}
+marker-detector.ts:67 Frame processing decision: {timeSinceLastFrame: 1814.7, frameInterval: 66.66666666666667, shouldProcess: true, lastFrameTime: 0}
+marker-detector.ts:75 Processing detection frame: {currentTime: 1814.7, lastFrameTime: 0, frameInterval: 66.66666666666667, timeSinceLastFrame: 1814.7}
+arjs-helper.ts:207 Video not ready for marker detection, readyState: 0
+marker-detector.ts:86 Detection result: {rawMarkersCount: 0, processedMarkersCount: 0, rawMarkers: Array(0)}
+marker-detector.ts:114 Scheduling next frame
+marker-detector.ts:51 detectFrame called: {currentTime: 1823, isRunning: true, lastFrameTime: 1814.7, frameInterval: 66.66666666666667}
+marker-detector.ts:67 Frame processing decision: {timeSinceLastFrame: 8.299999999999955, frameInterval: 66.66666666666667, shouldProcess: false, lastFrameTime: 1814.7}
+marker-detector.ts:104 Skipping frame due to rate limit: {timeSinceLastFrame: 8.299999999999955, frameInterval: 66.66666666666667, required: 66.66666666666667, actual: 8.299999999999955}
+marker-detector.ts:114 Scheduling next frame
+marker-detector.ts:127 stopDetection called, isRunning: true
+marker-detector.ts:131 Canceling animation frame: 11

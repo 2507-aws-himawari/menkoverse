@@ -59,6 +59,12 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
 
   // 検出開始
   const startDetection = useCallback(() => {
+    console.log('startDetection called from useArUcoDetector:', {
+      isInitialized,
+      hasVideoElement: !!videoElement,
+      isDetecting
+    });
+    
     if (!isInitialized || !videoElement || isDetecting) return;
 
     try {
@@ -81,6 +87,7 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
 
   // 検出停止
   const stopDetection = useCallback(() => {
+    console.log('stopDetection called from useArUcoDetector, isDetecting:', isDetecting);
     if (!isDetecting) return;
 
     detectorRef.current.stopDetection();
@@ -96,27 +103,34 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
   }, [videoElement, initialize]);
 
   useEffect(() => {
+    console.log('Detection control useEffect triggered:', {
+      isInitialized,
+      enabled: optionsRef.current.enabled,
+      isDetecting
+    });
+    
     if (isInitialized && optionsRef.current.enabled && !isDetecting) {
+      console.log('Starting detection from useEffect');
       startDetection();
     } else if (!optionsRef.current.enabled && isDetecting) {
+      console.log('Stopping detection from useEffect (disabled)');
       stopDetection();
     }
-  }, [isInitialized, startDetection, stopDetection, isDetecting]);
+  }, [isInitialized, isDetecting]); // stopDetection を依存関係から除外
 
   // クリーンアップ
   useEffect(() => {
     return () => {
-      if (isDetecting) {
-        detectorRef.current.stopDetection();
-      }
+      console.log('Cleanup useEffect triggered');
+      detectorRef.current.stopDetection();
       detectorRef.current.cleanup();
       
-      if (canvasRef.current) {
+      if (canvasRef.current && canvasRef.current.parentNode) {
         document.body.removeChild(canvasRef.current);
         canvasRef.current = null;
       }
     };
-  }, [isDetecting]);
+  }, []); // 依存関係を空にしてマウント時のみ実行
 
   return {
     detectedMarkers,
