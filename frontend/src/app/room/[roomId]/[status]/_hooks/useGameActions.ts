@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import { useParams } from 'next/navigation';
-import { useGameActionsSWR } from '@/lib/hooks/useGameActionsSWR';
+import { useGameActionsSWR } from './useGameActionsSWR';
 import {
     currentUserAtom,
     loadingAtom,

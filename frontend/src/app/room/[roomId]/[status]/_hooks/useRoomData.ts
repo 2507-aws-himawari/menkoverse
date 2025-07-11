@@ -1,6 +1,6 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
-import { useRoomSWR } from '@/lib/hooks/useRoomSWR';
+import { useRoomSWR } from './useRoomSWR';
 import { currentUserAtom, errorAtom, } from '@/lib/atoms';
 
 export function useRoomData() {

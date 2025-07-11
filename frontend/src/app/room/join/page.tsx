@@ -6,7 +6,7 @@ import { useAtom } from 'jotai';
 import { mockApi } from '@/lib/mockApi';
 import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
 import { currentUserAtom } from '@/lib/atoms';
-import { useRoomsSWR } from '@/lib/hooks/useRoomsSWR';
+import { useRoomsSWR } from './_hooks/useRoomsSWR';
 
 export default function JoinRoomPage() {
     const [roomId, setRoomId] = useState('');
