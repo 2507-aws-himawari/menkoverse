@@ -63,15 +63,21 @@ export default function AdminCardsPage() {
 			<h1>カード管理画面</h1>
 			<form onSubmit={handleSubmit(onSubmit)}>
 				<div>
-					<p>名前</p>
-					<input type="text" placeholder="名前を入力" {...register("name")} />
+					<label htmlFor="name">名前</label>
+					<input
+						id="name"
+						type="text"
+						placeholder="名前を入力"
+						{...register("name")}
+					/>
 					{errors.name && (
 						<div style={{ color: "red" }}>{errors.name.message}</div>
 					)}
 				</div>
 				<div>
-					<p>コスト</p>
+					<label htmlFor="cost">コスト</label>
 					<input
+						id="cost"
 						type="number"
 						min={1}
 						max={10}
@@ -82,8 +88,9 @@ export default function AdminCardsPage() {
 					)}
 				</div>
 				<div>
-					<p>攻撃力</p>
+					<label htmlFor="attack">攻撃力</label>
 					<input
+						id="attack"
 						type="number"
 						min={1}
 						max={100}
@@ -94,8 +101,9 @@ export default function AdminCardsPage() {
 					)}
 				</div>
 				<div>
-					<p>HP</p>
+					<label htmlFor="hp">HP</label>
 					<input
+						id="hp"
 						type="number"
 						min={1}
 						max={100}
