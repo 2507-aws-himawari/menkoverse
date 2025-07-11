@@ -17,14 +17,23 @@ export class ARJSHelper {
       }
       
       // デバッグ: 利用可能な名前空間を確認
-      console.log('Available namespaces:', Object.keys(window).filter(k => k.includes('AR') || k.includes('THREE')));
+      console.log('THREE:', (window as any).THREE);
       console.log('THREEx:', (window as any).THREEx);
-      console.log("AR.js library loaded successfully");
+      console.log('Available AR/THREE namespaces:', Object.keys(window).filter(k => k.includes('AR') || k.includes('THREE')));
+      console.log("AR.js libraries loaded successfully");
 
-      // THREEx 名前空間の確認
+      // THREEx と THREE の存在確認
+      if (!(window as any).THREE) {
+        throw new Error('THREE.js not found in global scope');
+      }
       if (!(window as any).THREEx) {
         throw new Error('THREEx not found in global scope');
       }
+      if (!(window as any).THREEx.ArToolkitContext) {
+        throw new Error('THREEx.ArToolkitContext not found');
+      }
+
+      console.log('Creating ArToolkitContext with config:', config);
 
       // ArToolkitContextの初期化
       this.arToolkitContext = new (window as any).THREEx.ArToolkitContext({
@@ -50,13 +59,64 @@ export class ARJSHelper {
   }
 
   private async loadARJSLibrary(): Promise<void> {
+    try {
+      // 1. Three.js を先に読み込み、window.THREEに明示的に代入
+      if (!(window as any).THREE) {
+        await this.loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js');
+        console.log('Three.js loaded successfully');
+        
+        // Three.jsがグローバルに設定されていることを確認
+        if (!(window as any).THREE) {
+          throw new Error('THREE.js failed to load into global scope');
+        }
+      }
+
+      // 2. AR.js（three.js形式）を読み込み（blogパターンに従い、scriptタグを削除）
+      if (!(window as any).THREEx) {
+        await this.loadScriptAndCleanup('https://raw.githack.com/AR-js-org/AR.js/3.4.7/three.js/build/ar-threex.js');
+        console.log('AR.js ar-threex loaded successfully');
+        
+        // THREExが利用可能になったことを確認
+        if (!(window as any).THREEx) {
+          throw new Error('THREEx failed to load into global scope');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load AR.js libraries:', error);
+      throw error;
+    }
+  }
+
+  private loadScript(url: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      // AR.jsライブラリをCDNから動的読み込み
       const script = document.createElement('script');
-      script.src = 'https://raw.githack.com/AR-js-org/AR.js/3.4.7/three.js/build/ar-threex.js';
+      script.src = url;
       script.onload = () => resolve();
-      script.onerror = reject;
+      script.onerror = (error) => {
+        console.error(`Failed to load script: ${url}`, error);
+        reject(new Error(`Failed to load script: ${url}`));
+      };
       document.head.appendChild(script);
+    });
+  }
+
+  private loadScriptAndCleanup(url: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url;
+      script.onload = () => {
+        // blogパターンに従い、読み込み完了後にscriptタグを削除
+        document.body.removeChild(script);
+        resolve();
+      };
+      script.onerror = (error) => {
+        console.error(`Failed to load script: ${url}`, error);
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+        reject(new Error(`Failed to load script: ${url}`));
+      };
+      document.body.appendChild(script);
     });
   }
 
