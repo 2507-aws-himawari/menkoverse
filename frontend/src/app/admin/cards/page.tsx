@@ -3,29 +3,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod/v4";
-
-const card = z.object({
-	id: z.string(),
-	name: z.string().min(1, "名前は必須です"),
-	cost: z
-		.number()
-		.min(1, "コストは1以上でなければなりません")
-		.max(10, "コストは10以下でなければなりません"),
-	attack: z
-		.number()
-		.min(1, "攻撃力は1以上でなければなりません")
-		.max(100, "攻撃力は100以下でなければなりません"),
-	hp: z
-		.number()
-		.min(1, "HPは1以上でなければなりません")
-		.max(100, "HPは100以下でなければなりません"),
-});
-
-type Card = z.infer<typeof card>;
+import { ShowCard } from "@/app/admin/cards/_components/ShowCard";
+import type { Card } from "@/types/card";
+import { cardSchema } from "@/lib/schema/card";
 
 export default function AdminCardsPage() {
-	const [showCard, setShowCard] = useState(false);
+	const [isSuccess, setIsSuccess] = useState(false);
   const [cardAttributes, setCardAttributes] = useState<Card>({
     id: "",
     name: "",
@@ -33,7 +16,6 @@ export default function AdminCardsPage() {
     attack: 1,
     hp: 1,
   });
-	const [error, setError] = useState<string | null>(null);
 
 	const {
 		register,
@@ -41,7 +23,7 @@ export default function AdminCardsPage() {
 		formState: { errors },
 		reset,
 	} = useForm<Card>({
-		resolver: zodResolver(card),
+		resolver: zodResolver(cardSchema),
     defaultValues: {
       id: "",
       name: "",
@@ -51,9 +33,9 @@ export default function AdminCardsPage() {
 		},
 	});
 
-	const onSubmit = async (data: Card) => {
+	const onSubmit = async (card: Card) => {
 		const cardId = `F-${crypto.randomUUID()}`;
-		data.id = cardId;
+		card.id = cardId;
 
 		try {
 			const response = await fetch("/api/admin/cards", {
@@ -61,19 +43,19 @@ export default function AdminCardsPage() {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify(data),
+				body: JSON.stringify(card),
 			});
 
 			if (!response.ok) {
 				throw new Error("カードの作成に失敗しました");
 			}
 
-			const result = await response.json();
-		} catch (error) {
-			setError("カードの作成に失敗しました");
+    } catch (error) {
+			throw new Error("カードの作成に失敗しました");
 		}
-		setShowCard(true);
-    setCardAttributes(data);
+
+		setIsSuccess(true);
+    setCardAttributes(card);
     reset();
 	};
 
@@ -102,17 +84,8 @@ export default function AdminCardsPage() {
 					{errors.hp && <div style={{ color: "red" }}>{errors.hp.message}</div>}
 				</div>
 				<button type="submit">作成</button>
-				{error && <div style={{ color: "red", marginTop: "8px" }}>{error}</div>}
 			</form>
-      {showCard && (
-        <div style={{ marginTop: "20px" }}>
-          <p>id: {cardAttributes.id}</p>
-          <p>名前: {cardAttributes.name}</p>
-          <p>コスト: {cardAttributes.cost}</p>
-          <p>攻撃力: {cardAttributes.attack}</p>
-          <p>HP: {cardAttributes.hp}</p>
-        </div>
-      )}
+      {isSuccess && <ShowCard cardAttributes={cardAttributes} />}
 		</div>
 	);
 }
