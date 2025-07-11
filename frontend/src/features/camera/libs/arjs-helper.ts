@@ -15,6 +15,7 @@ export class ARJSHelper {
       if (!(window as any).ARjs) {
         await this.loadARJSLibrary();
       }
+      console.log("AR.js library loaded successfully");
 
       // ArToolkitContextの初期化
       this.arToolkitContext = new (window as any).ARjs.Context({
@@ -47,9 +48,9 @@ export class ARJSHelper {
     return new Promise((resolve, reject) => {
       // AR.jsライブラリをCDNから動的読み込み
       const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/ar.js@3.4.5/three.js/build/ar.min.js';
+      script.src = 'https://raw.githack.com/AR-js-org/AR.js/3.4.7/three.js/build/ar.js';
       script.onload = () => resolve();
-      script.onerror = reject;
+      script.onerror = () => reject;
       document.head.appendChild(script);
     });
   }
@@ -62,16 +63,16 @@ export class ARJSHelper {
     try {
       // フレーム解析
       this.arToolkitContext.process(videoElement);
-      
+
       // 検出されたマーカーを取得
       const detectedMarkers = [];
       const markerNum = this.arToolkitContext.getMarkerNum();
-      
+
       for (let i = 0; i < markerNum; i++) {
         const markerMatrix = this.arToolkitContext.getMarkerMatrix(i);
         const markerId = this.arToolkitContext.getMarkerId(i);
         const confidence = this.arToolkitContext.getMarkerConfidence(i);
-        
+
         detectedMarkers.push({
           id: markerId,
           matrix: markerMatrix,
@@ -79,7 +80,7 @@ export class ARJSHelper {
           timestamp: Date.now(),
         });
       }
-      
+
       return detectedMarkers;
     } catch (error) {
       console.error('Marker detection failed:', error);
@@ -91,7 +92,7 @@ export class ARJSHelper {
     // マーカーマトリックスから位置と回転を抽出
     // これは簡略化された実装です
     const safeGet = (index: number): number => matrix[index] ?? 0;
-    
+
     return {
       position: {
         x: safeGet(12),
