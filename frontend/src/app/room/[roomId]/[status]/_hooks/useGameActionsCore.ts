@@ -67,10 +67,27 @@ export function useGameActionsCore(roomId: string | null) {
         }
     };
 
+    const handleDamagePlayer = async (currentUser: MockUser, targetUserId: string, damage: number): Promise<void> => {
+        if (!roomId) return;
+
+        try {
+            await mockApi.damagePlayer({
+                roomId,
+                currentUser,
+                targetUserId,
+                damage
+            });
+            await updateRoomCache(roomId);
+        } catch (error) {
+            throw error;
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
         handleForceEndOpponentTurn,
         handleConsumePP,
+        handleDamagePlayer,
     };
 }

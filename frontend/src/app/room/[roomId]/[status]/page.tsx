@@ -61,6 +61,7 @@ export default function RoomStatusPage() {
                             onEndTurn={gameActions.handleEndTurn}
                             onForceEndOpponentTurn={gameActions.handleForceEndOpponentTurn}
                             onStartTurn={gameActions.handleStartTurn}
+                            onDamagePlayer={gameActions.handleDamagePlayer}
                         />
                     )}
                 </div>

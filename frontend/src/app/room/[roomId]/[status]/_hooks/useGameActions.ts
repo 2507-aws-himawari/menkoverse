@@ -56,10 +56,17 @@ export function useGameActions() {
         });
     };
 
+    const handleDamagePlayer = async (targetUserId: string, damage: number) => {
+        await handleWithLoading(async () => {
+            await gameActions.handleDamagePlayer(currentUser, targetUserId, damage);
+        });
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
         handleForceEndOpponentTurn,
-        handleConsumePP
+        handleConsumePP,
+        handleDamagePlayer
     };
 }

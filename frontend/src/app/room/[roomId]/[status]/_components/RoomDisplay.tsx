@@ -41,7 +41,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                     </span>
                                 )}
                                 <div>
-                                    <p>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</p>
+                                    <span>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</span>
                                     <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
                                     <p>ターン: {player.turn}</p>
                                 </div>
@@ -83,12 +83,31 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     <div>
                         <h2>ゲーム終了</h2>
                         <div>
-                            <p>参加者: {roomPlayers.length}/2</p>
-                            <p>ゲームが終了しました</p>
+                            {(() => {
+                                const winnerPlayer = roomPlayers.find(p => p.hp > 0);
+                                const loserPlayer = roomPlayers.find(p => p.hp <= 0);
+                                const winnerUser = winnerPlayer ? getUserById(winnerPlayer.userId, mockUsers) : null;
+                                const loserUser = loserPlayer ? getUserById(loserPlayer.userId, mockUsers) : null;
+
+                                if (winnerUser && loserUser) {
+                                    return (
+                                        <div>
+                                            {winnerUser.name} の勝利！
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div>
+                                            ゲームが終了しました
+                                        </div>
+                                    );
+                                }
+                            })()}
                         </div>
                     </div>
-                )}
-            </div>
-        </div>
+                )
+                }
+            </div >
+        </div >
     );
 }
