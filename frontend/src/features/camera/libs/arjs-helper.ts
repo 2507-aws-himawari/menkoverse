@@ -191,16 +191,6 @@ export class ARJSHelper {
     }
 
     try {
-      // ビデオ要素の状態確認（詳細ログは最初の数回のみ）
-      if (Math.random() < 0.1) { // 10%の確率でログ出力
-        console.log('Video element state:', {
-          videoWidth: videoElement.videoWidth,
-          videoHeight: videoElement.videoHeight,
-          readyState: videoElement.readyState,
-          currentTime: videoElement.currentTime,
-          paused: videoElement.paused
-        });
-      }
 
       // ビデオが準備できていない場合は早期リターン
       if (videoElement.readyState < 1) { // readyState 1以上で検出を試行
@@ -219,14 +209,6 @@ export class ARJSHelper {
       // フレーム解析
       this.arToolkitContext.update(videoElement);
 
-      // ArToolkitContextの更新後の状態を確認（詳細ログは最初の数回のみ）
-      if (Math.random() < 0.1) { // 10%の確率でログ出力
-        console.log('ArToolkitContext update result:', {
-          arController: !!this.arToolkitContext.arController,
-          hasMarkerNum: this.arToolkitContext.arController && 
-                       typeof this.arToolkitContext.arController.getMarkerNum === 'function'
-        });
-      }
 
       // 検出されたマーカーを取得
       const detectedMarkers = [];
@@ -249,12 +231,6 @@ export class ARJSHelper {
           // AR.js Barcodeマーカー（4x4_BCH_13_9_3は0-511の範囲）
           // テスト用マーカーID（0, 1）でフィルタリング
           if ([0, 1].includes(markerId)) {
-            console.log(`AR.js Barcode marker detected:`, {
-              id: markerId,
-              confidence: confidence,
-              hasMatrix: !!markerMatrix
-            });
-
             detectedMarkers.push({
               id: markerId,
               matrix: markerMatrix,

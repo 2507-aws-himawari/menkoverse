@@ -48,12 +48,6 @@ export class MarkerDetector {
     let lastFrameTime = 0;
 
     const detectFrame = (currentTime: number) => {
-      console.log('detectFrame called:', {
-        currentTime,
-        isRunning: this.isRunning,
-        lastFrameTime,
-        frameInterval
-      });
       
       if (!this.isRunning) {
         console.log('Detection stopped, exiting frame loop');
@@ -62,56 +56,24 @@ export class MarkerDetector {
 
       // フレームレート制御（より寛容な条件）
       const timeSinceLastFrame = currentTime - lastFrameTime;
-      const shouldProcess = timeSinceLastFrame >= frameInterval || lastFrameTime === 0;
-      
-      console.log('Frame processing decision:', {
-        timeSinceLastFrame,
-        frameInterval,
-        shouldProcess,
-        lastFrameTime
-      });
-      
+      const shouldProcess = timeSinceLastFrame >= frameInterval || lastFrameTime === 0;   
       if (shouldProcess) {
-        console.log('Processing detection frame:', {
-          currentTime,
-          lastFrameTime,
-          frameInterval,
-          timeSinceLastFrame
-        });
-        
         try {
           const rawMarkers = this.arjsHelper.detectMarkers(video);
           const processedMarkers = this.processDetectedMarkers(rawMarkers, options.sensitivity);
           
-          console.log('Detection result:', {
-            rawMarkersCount: rawMarkers.length,
-            processedMarkersCount: processedMarkers.length,
-            rawMarkers: rawMarkers.map(m => ({ id: m.id, confidence: m.confidence }))
-          });
-          
           if (processedMarkers.length > 0) {
-            console.log('Calling onDetection with markers:', processedMarkers);
             onDetection(processedMarkers);
           }
         } catch (error) {
           console.error('Frame detection error:', error);
-          // エラーが発生してもループを継続
         }
         
         lastFrameTime = currentTime;
-      } else {
-        // フレームレート制御によりスキップ
-        console.log('Skipping frame due to rate limit:', {
-          timeSinceLastFrame,
-          frameInterval,
-          required: frameInterval,
-          actual: timeSinceLastFrame
-        });
       }
 
       // 次のフレームをスケジュール
       if (this.isRunning) {
-        console.log('Scheduling next frame');
         this.animationFrameId = requestAnimationFrame(detectFrame);
       } else {
         console.log('Detection loop stopped, not scheduling next frame');

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   useCameraDevices, 
   CameraWithMarkerDetection,
@@ -18,7 +18,7 @@ export default function CameraDebugPage() {
     frameRate: 15,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (devices.length > 0 && !selectedDeviceId) {
       setSelectedDeviceId(devices[0]?.deviceId || '');
     }
