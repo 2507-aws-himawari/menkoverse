@@ -10,6 +10,7 @@ interface GameControlsProps {
     onEndTurn: () => Promise<void>;
     onForceEndOpponentTurn: () => Promise<void>;
     onStartTurn: () => Promise<void>;
+    onDamagePlayer: (targetUserId: string, damage: number) => Promise<void>;
 }
 
 export function GameControls({
@@ -19,7 +20,8 @@ export function GameControls({
     onConsumePP,
     onEndTurn,
     onForceEndOpponentTurn,
-    onStartTurn
+    onStartTurn,
+    onDamagePlayer
 }: GameControlsProps) {
     const activePlayer = getActivePlayer(room);
     const activeUser = activePlayer ? getUserById(activePlayer.userId, mockUsers) : null;
@@ -49,6 +51,7 @@ export function GameControls({
                         loading={loading}
                         onConsumePP={onConsumePP}
                         onEndTurn={onEndTurn}
+                        onDamagePlayer={onDamagePlayer}
                     />
                 ) : (
                     <InactivePlayerControls
@@ -68,6 +71,7 @@ interface ActivePlayerControlsProps {
     loading: boolean;
     onConsumePP: (ppCost: number) => Promise<void>;
     onEndTurn: () => Promise<void>;
+    onDamagePlayer: (targetUserId: string, damage: number) => Promise<void>;
 }
 
 function ActivePlayerControls({
@@ -75,16 +79,33 @@ function ActivePlayerControls({
     currentUser,
     loading,
     onConsumePP,
-    onEndTurn
+    onEndTurn,
+    onDamagePlayer
 }: ActivePlayerControlsProps) {
     const currentPlayer = getPlayerByUserIdAndRoomId(currentUser.id, room.id);
     const currentPP = currentPlayer?.pp || 0;
     const currentTurn = currentPlayer?.turn || 1;
     const ppMax = calculatePPMax(currentTurn);
 
+    // 相手プレイヤーを取得
+    const roomPlayers = getPlayersByRoomId(room.id);
+    const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
+
     return (
         <div style={{ marginTop: '16px' }}>
             <h3>あなたのターンです</h3>
+
+            {/* HP減少デモボタン */}
+            {opponentPlayer && (
+                <div>
+                    <h4>相手リーダーに攻撃</h4>
+                    <button
+                        onClick={() => onDamagePlayer(opponentPlayer.userId, 1)}
+                        disabled={loading}>
+                        1ダメージ
+                    </button>
+                </div>
+            )}
 
             {/* PP消費デモボタン */}
             <div style={{ marginBottom: '12px' }}>
