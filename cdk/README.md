@@ -1,19 +1,13 @@
 # CDK
-これは TypeScript で CDK 開発を行うための空のプロジェクトです。
+CloudFormation を使用してデプロイを行うためのリポジトリ
 
-`cdk.json` ファイルは、CDK Toolkit にアプリの実行方法を指示します。
-
-## GUI setup
-GUI での開発を行う場合は、以下の手順でセットアップを行います。任意。
-
-1. 必要ライブラリをインストール（Python 3.x が必要）
-```bash
-pip install boto3 aws-sam-translator pyyaml
-```
-
-2. 拡張機能 `AWS Toolkit` をインストール
-3. ターミナルで `codegen-mode` を実行
-4. `sam-template.yaml` を右クリックし、`Open with Application Composer` を選択
+## How to deploy 
+1. `aws sso login --profile himawari` で認証しておく
+2. ここ `/cdk` に cd する
+3. `cdk list` でデプロイ対象の Stack を確認する
+   - frontend サーバーの変更の場合は `Menkoverse-dev-App` です
+4. `cdk deploy --profile himawari <StackName>` する
+5. 問題なくデプロイが進めば成功！
 
 ## よく使うコマンド
 
