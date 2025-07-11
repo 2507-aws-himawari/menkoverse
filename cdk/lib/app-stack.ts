@@ -77,7 +77,7 @@ export class AppStack extends cdk.Stack {
     const envName = props.environment ?? 'dev';
     const repositoryUrl = props.repositoryUrl ?? 'https://github.com/2507-aws-himawari/menkoverse';
     const branch = props.branch ?? 'main';
-    const connectionArn = props.connectionArn ?? "arn:aws:apprunner:ap-northeast-1:073825268718:service/menkoverse-app-dev/c205bf8af48e41c49ffa250235477297";
+    const connectionArn = props.connectionArn ?? "arn:aws:apprunner:ap-northeast-1:073825268718:connection/himawari/9372ad1b3cba4a7d84c6798e4450df0f";
     const monthlyBudgetLimit = props.monthlyBudgetLimit ?? (envName === 'prod' ? 200 : 50);
 
     // VPC Connector for App Runner
