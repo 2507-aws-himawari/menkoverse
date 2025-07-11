@@ -44,6 +44,11 @@ export default function JoinRoomPage() {
         setErrorMessage('');
 
         try {
+            await mockApi.joinRoom({
+                roomId: roomId.trim(),
+                currentUser
+            });
+
             const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
 
             if (!roomData) {
