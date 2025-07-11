@@ -38,33 +38,63 @@ export class MarkerDetector {
     options: MarkerDetectionOptions = { enabled: true, sensitivity: 0.5, frameRate: 30 }
   ) {
     if (this.isRunning) {
+      console.log('Detection already running, stopping previous detection');
       this.stopDetection();
     }
 
+    console.log('Starting marker detection with options:', options);
     this.isRunning = true;
     const frameInterval = 1000 / Math.min(options.frameRate, 30); // 最大30fps
     let lastFrameTime = 0;
 
     const detectFrame = (currentTime: number) => {
-      if (!this.isRunning) return;
+      if (!this.isRunning) {
+        console.log('Detection stopped, exiting frame loop');
+        return;
+      }
 
-      // フレームレート制御
-      if (currentTime - lastFrameTime >= frameInterval) {
+      // フレームレート制御（より寛容な条件）
+      const shouldProcess = currentTime - lastFrameTime >= frameInterval || lastFrameTime === 0;
+      
+      if (shouldProcess) {
+        console.log('Processing detection frame:', {
+          currentTime,
+          lastFrameTime,
+          frameInterval,
+          timeSinceLastFrame: currentTime - lastFrameTime
+        });
+        
         try {
           const rawMarkers = this.arjsHelper.detectMarkers(video);
           const processedMarkers = this.processDetectedMarkers(rawMarkers, options.sensitivity);
           
+          console.log('Detection result:', {
+            rawMarkersCount: rawMarkers.length,
+            processedMarkersCount: processedMarkers.length,
+            rawMarkers: rawMarkers.map(m => ({ id: m.id, confidence: m.confidence }))
+          });
+          
           if (processedMarkers.length > 0) {
+            console.log('Calling onDetection with markers:', processedMarkers);
             onDetection(processedMarkers);
           }
         } catch (error) {
           console.error('Frame detection error:', error);
+          // エラーが発生してもループを継続
         }
         
         lastFrameTime = currentTime;
+      } else {
+        // フレームレート制御によりスキップ
+        console.log('Skipping frame due to rate limit');
       }
 
-      this.animationFrameId = requestAnimationFrame(detectFrame);
+      // 次のフレームをスケジュール
+      if (this.isRunning) {
+        this.animationFrameId = requestAnimationFrame(detectFrame);
+      } else {
+        console.log('Detection loop stopped, not scheduling next frame');
+      }
     };
 
     this.animationFrameId = requestAnimationFrame(detectFrame);

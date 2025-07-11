@@ -186,40 +186,47 @@ export class ARJSHelper {
 
   detectMarkers(videoElement: HTMLVideoElement): any[] {
     if (!this.initialized || !this.arToolkitContext) {
+      console.log('AR.js not initialized, skipping detection');
       return [];
     }
 
     try {
-      // ビデオ要素の状態確認（0除算エラーの原因調査）
-      console.log('Video element state:', {
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-        readyState: videoElement.readyState,
-        currentTime: videoElement.currentTime,
-        paused: videoElement.paused
-      });
+      // ビデオ要素の状態確認（詳細ログは最初の数回のみ）
+      if (Math.random() < 0.1) { // 10%の確率でログ出力
+        console.log('Video element state:', {
+          videoWidth: videoElement.videoWidth,
+          videoHeight: videoElement.videoHeight,
+          readyState: videoElement.readyState,
+          currentTime: videoElement.currentTime,
+          paused: videoElement.paused
+        });
+      }
 
       // ビデオが準備できていない場合は早期リターン
-      if (videoElement.readyState < 2) {
-        console.log('Video not ready for marker detection');
+      if (videoElement.readyState < 1) { // readyState 1以上で検出を試行
+        console.log('Video not ready for marker detection, readyState:', videoElement.readyState);
         return [];
       }
 
-      // ビデオサイズが0の場合は早期リターン
+      // ビデオサイズが0の場合は早期リターン（初回のみ）
       if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-        console.log('Video size is 0, cannot detect markers');
+        if (Math.random() < 0.1) { // 10%の確率でログ出力
+          console.log('Video size is 0, cannot detect markers');
+        }
         return [];
       }
 
       // フレーム解析
       this.arToolkitContext.update(videoElement);
 
-      // ArToolkitContextの更新後の状態を確認
-      console.log('ArToolkitContext update result:', {
-        arController: !!this.arToolkitContext.arController,
-        hasMarkerNum: this.arToolkitContext.arController && 
-                     typeof this.arToolkitContext.arController.getMarkerNum === 'function'
-      });
+      // ArToolkitContextの更新後の状態を確認（詳細ログは最初の数回のみ）
+      if (Math.random() < 0.1) { // 10%の確率でログ出力
+        console.log('ArToolkitContext update result:', {
+          arController: !!this.arToolkitContext.arController,
+          hasMarkerNum: this.arToolkitContext.arController && 
+                       typeof this.arToolkitContext.arController.getMarkerNum === 'function'
+        });
+      }
 
       // 検出されたマーカーを取得
       const detectedMarkers = [];
@@ -227,7 +234,10 @@ export class ARJSHelper {
       // THREEx.ArToolkitContext の新しい API を使用
       if (this.arToolkitContext.arController) {
         const markerNum = this.arToolkitContext.arController.getMarkerNum();
-        console.log('Detected markers count:', markerNum);
+        
+        if (markerNum > 0) {
+          console.log('Detected markers count:', markerNum);
+        }
         
         for (let i = 0; i < markerNum; i++) {
           const markerMatrix = this.arToolkitContext.arController.getTransformationMatrix(i);
