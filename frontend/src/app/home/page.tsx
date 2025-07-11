@@ -1,5 +1,5 @@
 'use client';
-
+import { SignOut } from "@/app/components/signOut";
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
@@ -19,6 +19,7 @@ export default function HomePage() {
                     <button onClick={handleJoinGame}>
                         ゲーム参加
                     </button>
+<SignOut />
                 </div>
             </div>
         </div>
