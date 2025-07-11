@@ -23,7 +23,14 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
 
   // 初期化
   const initialize = useCallback(async () => {
-    if (!videoElement || isInitialized) return;
+    if (!videoElement) {
+      console.warn('video element is not ready');
+      return;
+    };
+
+    if (isInitialized) {
+      console.warn('ArUco detector is already initialized');
+    }
 
     try {
       setError(null);
