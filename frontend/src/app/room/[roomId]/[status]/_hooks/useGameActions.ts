@@ -1,99 +1,59 @@
-import { useAtom, useSetAtom } from 'jotai';
-import { mockApi } from '@/lib/mockApi';
+import { useAtom } from 'jotai';
+import { useParams } from 'next/navigation';
+import { useGameActionsSWR } from '@/lib/hooks/useGameActionsSWR';
 import {
-    currentRoomAtom,
     currentUserAtom,
-    startLoadingAtom,
-    endLoadingAtom,
-    setErrorAndEndLoadingAtom,
-    setRoomAtom
+    loadingAtom,
+    errorAtom,
 } from '@/lib/atoms';
 
 export function useGameActions() {
-    const [room] = useAtom(currentRoomAtom);
+    const params = useParams();
+    const rawRoomId = params?.roomId as string;
+    const roomId = rawRoomId ? decodeURIComponent(rawRoomId) : null;
+
     const [currentUser] = useAtom(currentUserAtom);
+    const [loading, setLoading] = useAtom(loadingAtom);
+    const [, setError] = useAtom(errorAtom);
 
-    const startLoading = useSetAtom(startLoadingAtom);
-    const endLoading = useSetAtom(endLoadingAtom);
-    const setErrorAndEndLoading = useSetAtom(setErrorAndEndLoadingAtom);
-    const setRoom = useSetAtom(setRoomAtom);
+    const gameActions = useGameActionsSWR(roomId);
 
-    const updateRoom = async () => {
-        if (!room) return;
-        const updatedRoom = await mockApi.getRoom({ roomId: room.id });
-        if (updatedRoom) {
-            setRoom(updatedRoom);
+    const handleWithLoading = async (action: () => Promise<void>) => {
+        try {
+            setLoading(true);
+            setError(null);
+            await action();
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : '操作に失敗しました';
+            setError(errorMessage);
+            throw err;
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleStartTurn = async () => {
-        if (!room) return;
-
-        try {
-            startLoading();
-            await mockApi.startTurn({
-                roomId: room.id,
-                currentUser
-            });
-            await updateRoom();
-            endLoading();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'ターン開始に失敗しました';
-            setErrorAndEndLoading(errorMessage);
-        }
+        await handleWithLoading(async () => {
+            await gameActions.handleStartTurn(currentUser);
+        });
     };
 
     const handleEndTurn = async () => {
-        if (!room) return;
-
-        try {
-            startLoading();
-            await mockApi.endTurn({
-                roomId: room.id,
-                currentUser
-            });
-            await updateRoom();
-            endLoading();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'ターン終了に失敗しました';
-            setErrorAndEndLoading(errorMessage);
-        }
+        await handleWithLoading(async () => {
+            await gameActions.handleEndTurn(currentUser);
+        });
     };
 
     const handleForceEndOpponentTurn = async () => {
-        if (!room) return;
-
-        try {
-            startLoading();
-            await mockApi.forceEndOpponentTurn({
-                roomId: room.id,
-                currentUser
-            });
-            await updateRoom();
-            endLoading();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : '相手ターン終了に失敗しました';
-            setErrorAndEndLoading(errorMessage);
-        }
+        await handleWithLoading(async () => {
+            await gameActions.handleForceEndOpponentTurn(currentUser);
+        });
     };
 
     const handleConsumePP = async (ppCost: number) => {
-        if (!room) return;
-
-        try {
-            startLoading();
-            await mockApi.consumePP({
-                roomId: room.id,
-                currentUser,
-                ppCost
-            });
-            await updateRoom();
-            endLoading();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'PP消費に失敗しました';
-            setErrorAndEndLoading(errorMessage);
-            console.error('PP消費エラー:', err);
-        }
+        await handleWithLoading(async () => {
+            await gameActions.handleConsumePP(currentUser, ppCost);
+        });
     };
 
     return {

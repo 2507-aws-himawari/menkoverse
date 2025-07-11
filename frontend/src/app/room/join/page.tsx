@@ -1,31 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { mockApi } from '@/lib/mockApi';
 import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
-import { currentUserAtom, availableRoomsAtom } from '@/lib/atoms';
+import { currentUserAtom } from '@/lib/atoms';
+import { useRoomsSWR } from '@/lib/hooks/useRoomsSWR';
 
 export default function JoinRoomPage() {
     const [roomId, setRoomId] = useState('');
     const [isJoining, setIsJoining] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [currentUser, setCurrentUser] = useAtom(currentUserAtom);
-    const [availableRooms, setAvailableRooms] = useAtom(availableRoomsAtom);
+    const { rooms: availableRooms, isLoading: roomsLoading, error: roomsError } = useRoomsSWR();
     const router = useRouter();
-
-    useEffect(() => {
-        const fetchRooms = async () => {
-            try {
-                const rooms = await mockApi.getRooms();
-                setAvailableRooms(rooms);
-            } catch (error) {
-                setAvailableRooms([]);
-            }
-        };
-        fetchRooms();
-    }, [setAvailableRooms]);
 
     const handleUserChange = (userId: string) => {
         const user = mockUsers.find(u => u.id === userId);
@@ -110,6 +99,8 @@ export default function JoinRoomPage() {
 
                     <div>
                         <h3>参加可能な部屋：</h3>
+                        {roomsLoading && <div>部屋一覧を読み込み中...</div>}
+                        {roomsError && <div>部屋一覧の取得に失敗しました: {roomsError.message}</div>}
                         <div>
                             {availableRooms.map((room) => {
                                 const roomPlayers = getPlayersByRoomId(room.id);
