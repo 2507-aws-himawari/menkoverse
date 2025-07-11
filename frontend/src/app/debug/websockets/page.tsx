@@ -38,29 +38,53 @@ export default function WebSocketTestPage() {
     }
   }, [error]);
 
+  useEffect(() => {
+    // Auto-generate player ID and user ID on mount
+    const generateRandomId = () => `player_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const generatedId = generateRandomId();
+    setPlayerId(generatedId);
+    setUserId(generatedId);
+    addLog(`Generated player ID: ${generatedId}`);
+
+    // Auto-load rooms on mount
+    loadRooms();
+  }, []);
+
   const loadRooms = async () => {
     try {
+      addLog('Loading rooms...');
       const response = await fetch('/api/rooms');
       const data = await response.json();
-      setRooms(data.rooms);
-      addLog(`Loaded ${data.rooms.length} rooms`);
+      
+      if (response.ok) {
+        setRooms(data.rooms);
+        addLog(`✓ Loaded ${data.rooms.length} rooms`);
+      } else {
+        addLog(`✗ Error loading rooms: ${data.error}`);
+      }
     } catch (error) {
-      addLog(`Error loading rooms: ${error}`);
+      addLog(`✗ Error loading rooms: ${error}`);
     }
   };
 
   const createRoom = async () => {
-    if (!roomName || !userId) {
-      addLog('Room name and user ID are required');
+    if (!roomName.trim()) {
+      addLog('Room name is required');
+      return;
+    }
+
+    if (!userId) {
+      addLog('User ID is required');
       return;
     }
 
     try {
+      addLog(`Creating room: ${roomName}`);
       const response = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roomName,
+          roomName: roomName.trim(),
           ownerId: userId,
           maxPlayers: 4
         })
@@ -68,23 +92,25 @@ export default function WebSocketTestPage() {
 
       const data = await response.json();
       if (response.ok) {
-        addLog(`Created room: ${data.roomId}`);
+        addLog(`✓ Room created successfully: ${data.roomId}`);
+        setRoomName('');
         await loadRooms();
       } else {
-        addLog(`Error creating room: ${data.error}`);
+        addLog(`✗ Error creating room: ${data.error}`);
       }
     } catch (error) {
-      addLog(`Error creating room: ${error}`);
+      addLog(`✗ Error creating room: ${error}`);
     }
   };
 
   const joinRoom = async (room: Room) => {
     if (!playerId || !userId) {
-      addLog('Player ID and user ID are required');
+      addLog('✗ Player ID and user ID are required');
       return;
     }
 
     try {
+      addLog(`Joining room: ${room.name} (${room.id})`);
       const response = await fetch(`/api/rooms/${room.id}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,21 +122,21 @@ export default function WebSocketTestPage() {
 
       const data = await response.json();
       if (response.ok) {
-        addLog(`Joined room: ${room.id}`);
+        addLog(`✓ Successfully joined room: ${room.name}`);
         setSelectedRoom(room);
         setIsJoined(true);
         // WebSocket will automatically connect when room is selected
       } else {
-        addLog(`Error joining room: ${data.error}`);
+        addLog(`✗ Error joining room: ${data.error}`);
       }
     } catch (error) {
-      addLog(`Error joining room: ${error}`);
+      addLog(`✗ Error joining room: ${error}`);
     }
   };
 
   const sendTestMessage = () => {
-    if (!selectedRoom || !message || !isConnected) {
-      addLog('Select a room, enter a message, and ensure WebSocket is connected');
+    if (!selectedRoom || !message.trim() || !isConnected) {
+      addLog('✗ Select a room, enter a message, and ensure WebSocket is connected');
       return;
     }
 
@@ -118,18 +144,20 @@ export default function WebSocketTestPage() {
       action: 'sendMessage',
       roomId: selectedRoom.id,
       playerId,
-      message
+      message: message.trim()
     };
 
     sendWebSocketMessage(messageData);
-    addLog(`Sent: ${JSON.stringify(messageData)}`);
+    addLog(`→ Sent: ${JSON.stringify(messageData)}`);
     setMessage('');
   };
 
   const leaveRoom = () => {
+    if (selectedRoom) {
+      addLog(`Left room: ${selectedRoom.name}`);
+    }
     setSelectedRoom(null);
     setIsJoined(false);
-    addLog('Left room');
   };
 
   return (
@@ -194,6 +222,7 @@ export default function WebSocketTestPage() {
             type="text"
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && createRoom()}
             className="flex-1 p-2 border rounded"
             placeholder="Enter room name"
           />
