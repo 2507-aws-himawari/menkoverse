@@ -13,7 +13,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const roomPlayers = getPlayersByRoomId(room.id);
     const router = useRouter();
 
-    const handleJoinGame = () => {
+    const handleBackHome = () => {
         router.push('/home');
     };
     const Turn = roomPlayers.length > 0 ? Math.max(...roomPlayers.map(p => p.turn)) : 1;
@@ -96,7 +96,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                             <div>
                                                 {winnerUser.name} の勝利！
                                             </div>
-                                            <button onClick={() => handleJoinGame()}>
+                                            <button onClick={() => handleBackHome()}>
                                                 ホームに戻る
                                             </button>
                                         </div>
