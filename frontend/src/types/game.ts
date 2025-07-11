@@ -119,3 +119,42 @@ export interface GameAction {
   roomId: string;
   data?: any;
 }
+
+// API Request/Response types
+export interface CreateRoomRequest {
+  roomName: string;
+  ownerId: string;
+  maxPlayers?: number;
+}
+
+export interface CreateRoomResponse {
+  roomId: string;
+  roomName: string;
+}
+
+export interface JoinRoomRequest {
+  roomId: string;
+  playerId: string;
+  userId: string;
+}
+
+export interface JoinRoomResponse {
+  success: boolean;
+  roomId: string;
+}
+
+export interface RoomListResponse {
+  rooms: GameRoom[];
+}
+
+// UI state types
+export interface Room {
+  id: string;
+  name: string;
+  playerCount: number;
+  maxPlayers: number;
+  status: string;
+  ownerId: string;
+  createdAt: number;
+  updatedAt: number;
+}
