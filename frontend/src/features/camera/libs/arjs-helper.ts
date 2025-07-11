@@ -2,6 +2,7 @@ import type { ArUcoMarkerConfig } from '../types';
 
 export class ARJSHelper {
   private arToolkitContext: any = null;
+  private arToolkitSource: any = null;
   private initialized = false;
 
   async initialize(canvas: HTMLCanvasElement, video: HTMLVideoElement, config: ArUcoMarkerConfig) {
@@ -35,18 +36,42 @@ export class ARJSHelper {
 
       console.log('Creating ArToolkitContext with config:', config);
 
+      // Canvas要素の状態確認（0除算エラーの原因調査）
+      console.log('Canvas element state:', {
+        width: canvas.width,
+        height: canvas.height,
+        offsetWidth: canvas.offsetWidth,
+        offsetHeight: canvas.offsetHeight
+      });
+
+      // Canvas要素のサイズが0の場合は警告
+      if (canvas.width === 0 || canvas.height === 0) {
+        console.warn('Canvas size is 0, this may cause divide by zero errors');
+      }
+
       // ArToolkitContextの初期化
       this.arToolkitContext = new (window as any).THREEx.ArToolkitContext({
-        cameraParametersUrl: 'https://raw.githack.com/AR-js-org/AR.js/3.4.7/data/data/camera_para.dat',
-        detectionMode: 'mono_and_matrix',
+        cameraParametersUrl: 'https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.5/data/data/camera_para.dat',
+        detectionMode: 'mono', // 'mono_and_matrix' から 'mono' に変更してより安定化
         matrixCodeType: config.dictionaryName, // '4x4_1000'
-        canvasWidth: canvas.width,
-        canvasHeight: canvas.height,
+        canvasWidth: Math.max(canvas.width, 640), // 最小サイズを保証
+        canvasHeight: Math.max(canvas.height, 480), // 最小サイズを保証
       });
 
       await new Promise((resolve, reject) => {
         this.arToolkitContext.init(() => {
           this.initialized = true;
+          
+          // ArToolkitSourceの初期化も追加
+          this.arToolkitSource = new (window as any).THREEx.ArToolkitSource({
+            sourceType: 'webcam',
+            sourceWidth: Math.max(canvas.width, 640),
+            sourceHeight: Math.max(canvas.height, 480),
+            displayWidth: Math.max(canvas.width, 640),
+            displayHeight: Math.max(canvas.height, 480),
+          });
+
+          console.log('ArToolkitContext and ArToolkitSource initialized successfully');
           resolve(true);
         }, reject);
       });
@@ -126,6 +151,27 @@ export class ARJSHelper {
     }
 
     try {
+      // ビデオ要素の状態確認（0除算エラーの原因調査）
+      console.log('Video element state:', {
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight,
+        readyState: videoElement.readyState,
+        currentTime: videoElement.currentTime,
+        paused: videoElement.paused
+      });
+
+      // ビデオが準備できていない場合は早期リターン
+      if (videoElement.readyState < 2) {
+        console.log('Video not ready for marker detection');
+        return [];
+      }
+
+      // ビデオサイズが0の場合は早期リターン
+      if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+        console.log('Video size is 0, cannot detect markers');
+        return [];
+      }
+
       // フレーム解析
       this.arToolkitContext.update(videoElement);
 
@@ -182,6 +228,9 @@ export class ARJSHelper {
     if (this.arToolkitContext) {
       // AR.jsコンテキストのクリーンアップ
       this.arToolkitContext = null;
+    }
+    if (this.arToolkitSource) {
+      this.arToolkitSource = null;
     }
     this.initialized = false;
   }
