@@ -48,20 +48,35 @@ export class MarkerDetector {
     let lastFrameTime = 0;
 
     const detectFrame = (currentTime: number) => {
+      console.log('detectFrame called:', {
+        currentTime,
+        isRunning: this.isRunning,
+        lastFrameTime,
+        frameInterval
+      });
+      
       if (!this.isRunning) {
         console.log('Detection stopped, exiting frame loop');
         return;
       }
 
       // フレームレート制御（より寛容な条件）
-      const shouldProcess = currentTime - lastFrameTime >= frameInterval || lastFrameTime === 0;
+      const timeSinceLastFrame = currentTime - lastFrameTime;
+      const shouldProcess = timeSinceLastFrame >= frameInterval || lastFrameTime === 0;
+      
+      console.log('Frame processing decision:', {
+        timeSinceLastFrame,
+        frameInterval,
+        shouldProcess,
+        lastFrameTime
+      });
       
       if (shouldProcess) {
         console.log('Processing detection frame:', {
           currentTime,
           lastFrameTime,
           frameInterval,
-          timeSinceLastFrame: currentTime - lastFrameTime
+          timeSinceLastFrame
         });
         
         try {
@@ -86,24 +101,34 @@ export class MarkerDetector {
         lastFrameTime = currentTime;
       } else {
         // フレームレート制御によりスキップ
-        console.log('Skipping frame due to rate limit');
+        console.log('Skipping frame due to rate limit:', {
+          timeSinceLastFrame,
+          frameInterval,
+          required: frameInterval,
+          actual: timeSinceLastFrame
+        });
       }
 
       // 次のフレームをスケジュール
       if (this.isRunning) {
+        console.log('Scheduling next frame');
         this.animationFrameId = requestAnimationFrame(detectFrame);
       } else {
         console.log('Detection loop stopped, not scheduling next frame');
       }
     };
 
+    console.log('Starting initial requestAnimationFrame');
     this.animationFrameId = requestAnimationFrame(detectFrame);
+    console.log('Initial requestAnimationFrame scheduled, ID:', this.animationFrameId);
   }
 
   stopDetection() {
+    console.log('stopDetection called, isRunning:', this.isRunning);
     this.isRunning = false;
     
     if (this.animationFrameId) {
+      console.log('Canceling animation frame:', this.animationFrameId);
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
