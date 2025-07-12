@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { fromIni } from '@aws-sdk/credential-providers';
 import type { CreateRoomRequest, CreateRoomResponse } from '@/types/game';
 import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
@@ -207,6 +207,34 @@ export async function updateRoomStatus(roomId: string, status: 'waiting' | 'play
   } catch (error) {
     console.error('Error updating room status:', error);
     return null;
+  }
+}
+
+// ルーム削除
+export async function deleteRoom(roomId: string): Promise<void> {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, deleting from mock data');
+    const index = mockRooms.findIndex(room => room.id === roomId);
+    if (index !== -1) {
+      mockRooms.splice(index, 1);
+      console.log(`Mock room ${roomId} deleted`);
+    }
+    return;
+  }
+
+  try {
+    await docClient.send(new DeleteCommand({
+      TableName: getTableName(),
+      Key: {
+        PK: `ROOM#${roomId}`,
+        SK: 'METADATA'
+      }
+    }));
+    console.log(`Room ${roomId} deleted successfully`);
+  } catch (error) {
+    console.error('Error deleting room:', error);
+    throw error;
   }
 }
 

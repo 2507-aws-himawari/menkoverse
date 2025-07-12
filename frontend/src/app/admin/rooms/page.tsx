@@ -49,6 +49,29 @@ export default function RoomsPage() {
     fetchRooms();
   };
 
+  const handleDeleteRoom = async (roomId: string) => {
+    if (!confirm(`ルーム「${roomId}」を削除してもよろしいですか？\n\nこの操作は取り消せません。`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/rooms/${roomId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        await fetchRooms(); // 一覧を更新
+        alert('ルームを削除しました');
+      } else {
+        const error = await response.json();
+        alert(`削除に失敗しました: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Delete room error:', error);
+      alert('削除に失敗しました');
+    }
+  };
+
   const getStatusText = (status: string) => {
     switch (status) {
       case 'waiting': return '待機中';
@@ -167,6 +190,12 @@ export default function RoomsPage() {
                     >
                       詳細
                     </Link>
+                    <button
+                      onClick={() => handleDeleteRoom(room.id)}
+                      className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors text-sm"
+                    >
+                      削除
+                    </button>
                   </div>
                 </div>
               </div>
