@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const deck = await db.deck.create({
       data: {
-        id: crypto.randomUUID(),
+        id: `D-${crypto.randomUUID()}`,
         name: validatedData.name,
         userId: session.user.id,
       },
