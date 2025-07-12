@@ -103,14 +103,14 @@ model DeckCard {
 }
 
 model RentalDeck {
-    id        String   @id @default("R-${cuid()}")
+    id        String   @id @unique
     name      String
 
     cards RentalDeckCard[]
 }
 
 model RentalDeckCard {
-    id           String @id @default(cuid())
+    id           String @id @unique
     rentalDeckId String
     followerId   String
 
