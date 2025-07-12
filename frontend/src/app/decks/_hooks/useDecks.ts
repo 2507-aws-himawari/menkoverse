@@ -157,3 +157,36 @@ export function useAsyncOperation() {
     clearError: () => setError(null),
   };
 }
+
+// 特定のIDに対する操作状態を管理するフック
+export function useCardOperation() {
+  const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+
+  const execute = async <T>(cardId: string, operation: () => Promise<T>): Promise<T | null> => {
+    setLoadingCards(prev => new Set(prev).add(cardId));
+    setError(null);
+
+    try {
+      const result = await operation();
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '操作に失敗しました';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setLoadingCards(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cardId);
+        return newSet;
+      });
+    }
+  };
+
+  return {
+    isLoading: (cardId: string) => loadingCards.has(cardId),
+    error,
+    execute,
+    clearError: () => setError(null),
+  };
+}
