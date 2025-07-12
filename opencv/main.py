@@ -37,11 +37,8 @@ if ENVIRONMENT == "prod":
         "https://menkoverse.com",
     ]
 else:
-    # Development origins
-    allowed_origins = [
-        "http://localhost:3000",
-        FRONTEND_URL,
-    ]
+    # Development origins - allow all origins for development
+    allowed_origins = ["*"]
 
 # Add CORS middleware for web browser access
 app.add_middleware(
@@ -205,4 +202,4 @@ async def _validate_uploaded_file(file: UploadFile) -> None:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="info")
