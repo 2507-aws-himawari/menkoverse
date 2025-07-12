@@ -106,7 +106,7 @@ model RentalDeck {
     id        String   @id @unique
     name      String
 
-    cards RentalDeckCard[]
+    RentalDeckCards RentalDeckCard[]
 }
 
 model RentalDeckCard {
