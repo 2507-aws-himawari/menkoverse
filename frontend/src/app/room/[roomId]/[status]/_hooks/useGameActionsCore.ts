@@ -117,6 +117,62 @@ export function useGameActionsCore(roomId: string | null) {
         }
     };
 
+    // フォロワーで攻撃
+    const handleAttackWithFollower = async (
+        currentUser: MockUser,
+        attackerBoardCardId: string,
+        targetType: 'follower' | 'player',
+        targetId: string
+    ): Promise<string | null> => {
+        if (!roomId) return '部屋が見つかりません';
+
+        try {
+            const result = await mockApi.attackWithFollower({
+                roomId,
+                currentUser,
+                attackerBoardCardId,
+                targetType,
+                targetId
+            });
+
+            if (result.success) {
+                await updateRoomCache(roomId);
+                return null;
+            } else {
+                return result.message || '攻撃に失敗しました';
+            }
+        } catch (error) {
+            return error instanceof Error ? error.message : '攻撃に失敗しました';
+        }
+    };
+
+    // 相手フィールドにフォロワーを召喚（デモ機能）
+    const handleSummonFollowerToOpponent = async (
+        currentUser: MockUser,
+        targetUserId: string,
+        followerId: string
+    ): Promise<string | null> => {
+        if (!roomId) return '部屋が見つかりません';
+
+        try {
+            const result = await mockApi.summonFollowerToOpponent({
+                roomId,
+                currentUser,
+                targetUserId,
+                followerId
+            });
+
+            if (result.success) {
+                await updateRoomCache(roomId);
+                return null;
+            } else {
+                return result.message || '相手フィールドへの召喚に失敗しました';
+            }
+        } catch (error) {
+            return error instanceof Error ? error.message : '相手フィールドへの召喚に失敗しました';
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -126,5 +182,7 @@ export function useGameActionsCore(roomId: string | null) {
         handleDamageToSelf,
         handleDamageToOpponent,
         handleSummonFollower,
+        handleAttackWithFollower,
+        handleSummonFollowerToOpponent,
     };
 }

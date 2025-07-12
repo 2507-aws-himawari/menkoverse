@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import { calculatePPMax, calculatePlayerTurn, getActivePlayer, recoverPlayerPP, switchTurns } from './gameLogic';
+import { calculatePPMax, calculatePlayerTurn, getActivePlayer, recoverPlayerPP, switchTurns, resetFollowerAttackStatus, canFollowerAttack, markFollowerAsAttacked, hasFollowerAttackedThisTurn } from './gameLogic';
 import {
     mockUsers,
     mockRooms,
@@ -42,7 +42,11 @@ import type {
     DrawCardsInput,
     GetHandInput,
     SummonFollowerInput,
-    SummonFollowerResult
+    SummonFollowerResult,
+    AttackInput,
+    AttackResult,
+    SummonFollowerToOpponentInput,
+    SummonFollowerToOpponentResult
 } from './types';
 
 export const mockApi = {
@@ -108,7 +112,6 @@ export const mockApi = {
 
         mockRoomPlayers.push(newPlayer);
 
-        // 2人揃っても自動でゲーム開始しない（手動開始に変更）
         return newPlayer;
     },
 
@@ -308,6 +311,9 @@ export const mockApi = {
         player.turn = playerTurn;
         recoverPlayerPP(player);
 
+        // ターン開始時にフォロワーの攻撃状態をリセット
+        resetFollowerAttackStatus(player.id);
+
         // ターン開始時に1枚ドロー
         try {
             if (!player.selectedDeckId) {
@@ -375,6 +381,9 @@ export const mockApi = {
                     const nextPlayerTurn = calculatePlayerTurn(room, nextPlayerIndex);
                     nextPlayer.turn = nextPlayerTurn;
                     recoverPlayerPP(nextPlayer);
+
+                    // ターン開始時にフォロワーの攻撃状態をリセット
+                    resetFollowerAttackStatus(nextPlayer.id);
 
                     // ターン開始時に1枚ドロー
                     if (nextPlayer.selectedDeckId) {
@@ -470,6 +479,9 @@ export const mockApi = {
                     const nextPlayerTurn = calculatePlayerTurn(room, nextPlayerIndex);
                     nextPlayer.turn = nextPlayerTurn;
                     recoverPlayerPP(nextPlayer);
+
+                    // ターン開始時にフォロワーの攻撃状態をリセット
+                    resetFollowerAttackStatus(nextPlayer.id);
 
                     // ターン開始時に1枚ドロー
                     if (nextPlayer.selectedDeckId) {
@@ -659,7 +671,8 @@ export const mockApi = {
             cost: handCard.cost,
             attack: handCard.attack,
             hp: handCard.hp,
-            position: currentBoardCards.length
+            position: currentBoardCards.length,
+            summonedTurn: player.turn
         };
 
         mockBoard.push(boardCard);
@@ -674,6 +687,215 @@ export const mockApi = {
             success: true,
             boardCard: boardCard,
             message: 'フォロワーを召喚しました'
+        };
+    },
+
+    // フォロワーで攻撃
+    attackWithFollower: async (input: AttackInput): Promise<AttackResult> => {
+        const room = getRoomById(input.roomId);
+        if (!room) {
+            return {
+                success: false,
+                message: 'ルームが見つかりません',
+                reason: 'unknown'
+            };
+        }
+
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!player) {
+            return {
+                success: false,
+                message: 'プレイヤーが見つかりません',
+                reason: 'unknown'
+            };
+        }
+
+        // アクティブプレイヤーかチェック
+        const activePlayer = getActivePlayer(room);
+        if (!activePlayer || activePlayer.userId !== input.currentUser.id) {
+            return {
+                success: false,
+                message: 'あなたのターンではありません',
+                reason: 'not_your_turn'
+            };
+        }
+
+        // 攻撃者のフォロワーを取得
+        const attackerCard = mockBoard.find(card =>
+            card.id === input.attackerBoardCardId && card.roomPlayerId === player.id
+        );
+        if (!attackerCard) {
+            return {
+                success: false,
+                message: '攻撃者フォロワーが見つかりません',
+                reason: 'attacker_not_found'
+            };
+        }
+
+        // 攻撃可能かチェック（召喚酔い・攻撃済みチェック）
+        if (!canFollowerAttack(attackerCard, player.turn)) {
+            const isJustSummoned = attackerCard.summonedTurn === player.turn;
+            const hasAttacked = hasFollowerAttackedThisTurn(attackerCard.id);
+
+            return {
+                success: false,
+                message: isJustSummoned ? 'このフォロワーは召喚酔いで攻撃できません' : 'このフォロワーは既に攻撃済みです',
+                reason: 'cannot_attack'
+            };
+        }
+
+        const destroyedFollowers: string[] = [];
+
+        if (input.targetType === 'player') {
+            // プレイヤーへの攻撃
+            const targetPlayer = getPlayerByUserIdAndRoomId(input.targetId, input.roomId);
+            if (!targetPlayer) {
+                return {
+                    success: false,
+                    message: '攻撃対象プレイヤーが見つかりません',
+                    reason: 'target_not_found'
+                };
+            }
+
+            // ダメージを与える
+            const newHp = Math.max(0, targetPlayer.hp - attackerCard.attack);
+            targetPlayer.hp = newHp;
+
+            // 攻撃者は攻撃済みにする
+            markFollowerAsAttacked(attackerCard.id);
+
+            // 勝敗判定
+            if (newHp <= 0) {
+                room.status = 'finish';
+            }
+
+            return {
+                success: true,
+                message: `プレイヤーに${attackerCard.attack}ダメージを与えました`,
+                destroyedFollowers
+            };
+
+        } else if (input.targetType === 'follower') {
+            // フォロワーへの攻撃
+            const targetCard = mockBoard.find(card => card.id === input.targetId);
+            if (!targetCard) {
+                return {
+                    success: false,
+                    message: '攻撃対象フォロワーが見つかりません',
+                    reason: 'target_not_found'
+                };
+            }
+
+            // 相手のフォロワーかチェック
+            if (targetCard.roomPlayerId === player.id) {
+                return {
+                    success: false,
+                    message: '自分のフォロワーは攻撃できません',
+                    reason: 'invalid_target'
+                };
+            }
+
+            // 戦闘ダメージ計算
+            const attackerDamage = attackerCard.attack;
+            const defenderDamage = targetCard.attack;
+
+            // 相互ダメージ
+            attackerCard.hp -= defenderDamage;
+            targetCard.hp -= attackerDamage;
+
+            // 攻撃者は攻撃済みにする
+            markFollowerAsAttacked(attackerCard.id);
+
+            // 破壊チェック
+            if (attackerCard.hp <= 0) {
+                const attackerIndex = mockBoard.findIndex(card => card.id === attackerCard.id);
+                if (attackerIndex !== -1) {
+                    mockBoard.splice(attackerIndex, 1);
+                    destroyedFollowers.push(attackerCard.id);
+                }
+            }
+
+            if (targetCard.hp <= 0) {
+                const targetIndex = mockBoard.findIndex(card => card.id === targetCard.id);
+                if (targetIndex !== -1) {
+                    mockBoard.splice(targetIndex, 1);
+                    destroyedFollowers.push(targetCard.id);
+                }
+            }
+
+            return {
+                success: true,
+                message: `フォロワー同士の戦闘が発生しました`,
+                destroyedFollowers
+            };
+        }
+
+        return {
+            success: false,
+            message: '無効な攻撃対象です',
+            reason: 'invalid_target'
+        };
+    },
+
+    // 相手フィールドにフォロワーを召喚（デモ機能）
+    summonFollowerToOpponent: async (input: SummonFollowerToOpponentInput): Promise<SummonFollowerToOpponentResult> => {
+        const room = getRoomById(input.roomId);
+        if (!room) {
+            return {
+                success: false,
+                message: 'ルームが見つかりません',
+                reason: 'unknown'
+            };
+        }
+
+        // 対象プレイヤーを取得
+        const targetPlayer = getPlayerByUserIdAndRoomId(input.targetUserId, input.roomId);
+        if (!targetPlayer) {
+            return {
+                success: false,
+                message: '対象プレイヤーが見つかりません',
+                reason: 'target_not_found'
+            };
+        }
+
+        // フォロワー情報を取得
+        const follower = getFollowerById(input.followerId);
+        if (!follower) {
+            return {
+                success: false,
+                message: '指定されたフォロワーが見つかりません',
+                reason: 'follower_not_found'
+            };
+        }
+
+        // ボードの空きスペースをチェック
+        const currentBoardCards = getBoardByRoomPlayerId(targetPlayer.id);
+        if (currentBoardCards.length >= 5) {
+            return {
+                success: false,
+                message: 'ボードが満員です（最大5体まで）',
+                reason: 'board_full'
+            };
+        }
+
+        // ボードにカードを追加
+        const boardCard: MockBoardCard = {
+            id: `board_${targetPlayer.id}_${Date.now()}_demo`,
+            roomPlayerId: targetPlayer.id,
+            cardId: follower.id,
+            cost: follower.cost,
+            attack: follower.attack,
+            hp: follower.hp,
+            position: currentBoardCards.length,
+            summonedTurn: targetPlayer.turn
+        };
+
+        mockBoard.push(boardCard);
+
+        return {
+            success: true,
+            boardCard: boardCard,
+            message: `相手フィールドに${follower.name}を召喚しました`
         };
     },
 };

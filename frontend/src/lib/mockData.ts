@@ -148,6 +148,9 @@ export let mockBoard: MockBoardCard[] = [
 
 ];
 
+// 攻撃済みフォロワーのリスト（ターンごとにリセット）
+export let attackedFollowersThisTurn: Set<string> = new Set();
+
 // フォロワー（カードの基本情報）
 export const mockFollowers: MockFollower[] = [
     { id: 'card1', name: 'ゴブリン', cost: 1, attack: 2, hp: 1 },

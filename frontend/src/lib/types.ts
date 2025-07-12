@@ -40,7 +40,8 @@ export interface MockBoardCard {
     cost: number;
     attack: number;
     hp: number;
-    position: number; // ボード上の位置 (0-6)
+    position: number;
+    summonedTurn: number;
 }
 
 export interface MockRoomPlayer {
@@ -150,4 +151,33 @@ export interface SummonFollowerResult {
     boardCard?: MockBoardCard;
     message?: string;
     reason?: 'board_full' | 'insufficient_pp' | 'invalid_card' | 'not_your_turn' | 'unknown';
+}
+//demo(後で消してよし)
+export interface SummonFollowerToOpponentInput {
+    roomId: string;
+    currentUser: MockUser;
+    targetUserId: string;
+    followerId: string;
+}
+//demo(後で消してよし)
+export interface SummonFollowerToOpponentResult {
+    success: boolean;
+    boardCard?: MockBoardCard;
+    message?: string;
+    reason?: 'board_full' | 'target_not_found' | 'follower_not_found' | 'unknown';
+}
+
+export interface AttackInput {
+    roomId: string;
+    currentUser: MockUser;
+    attackerBoardCardId: string;
+    targetType: 'follower' | 'player';
+    targetId: string;
+}
+
+export interface AttackResult {
+    success: boolean;
+    message?: string;
+    reason?: 'not_your_turn' | 'cannot_attack' | 'invalid_target' | 'attacker_not_found' | 'target_not_found' | 'unknown';
+    destroyedFollowers?: string[];
 }
