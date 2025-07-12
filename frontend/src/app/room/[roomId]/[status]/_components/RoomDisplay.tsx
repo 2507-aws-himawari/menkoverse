@@ -1,6 +1,6 @@
 import { getUserById, getActivePlayer, calculatePPMax } from '@/lib/gameLogic';
 import { GAME_CONSTANTS } from '@/lib/constants';
-import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
+import { mockUsers, getPlayersByRoomId, getDeckById } from '@/lib/mockData';
 import { mockApi } from '@/lib/mockApi';
 import type { MockRoom, MockRoomPlayer } from '@/lib/types';
 import { useRouter } from 'next/navigation';
@@ -83,6 +83,9 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     const isActivePlayer = activePlayer?.userId === player.userId;
                     const playerPosition = index === 0 ? '先攻' : '後攻';
 
+                    // デッキ情報を取得
+                    const selectedDeck = player.selectedDeckId ? getDeckById(player.selectedDeckId) : null;
+
                     return (
                         <div key={player.id}>
                             <div>
@@ -103,12 +106,25 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 <div>
                                     <span>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</span>
                                     <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
+
+                                    {/* デッキ情報表示 */}
                                     {room.status === 'waiting' && (
                                         <p>
                                             デッキ: {player.selectedDeckId ? (
                                                 <span style={{ color: 'green' }}>選択済み</span>
                                             ) : (
                                                 <span style={{ color: 'orange' }}>未選択</span>
+                                            )}
+                                        </p>
+                                    )}
+
+                                    {room.status === 'playing' && (
+                                        <p >
+                                            [DEBUG] デッキ: {selectedDeck ? selectedDeck.name : '未選択'}
+                                            {player.selectedDeckId && (
+                                                <span style={{ marginLeft: '5px' }}>
+                                                    (ID: {player.selectedDeckId})
+                                                </span>
                                             )}
                                         </p>
                                     )}
@@ -203,6 +219,30 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 </div>
                             )}
                         </div>
+                    </div>
+                )}
+
+                {room.status === 'playing' && (
+                    <div>
+                        <h4 >
+                            [DEBUG] デッキ選択状況
+                        </h4>
+                        {roomPlayers.map((player, index) => {
+                            const user = getUserById(player.userId, mockUsers);
+                            const selectedDeck = player.selectedDeckId ? getDeckById(player.selectedDeckId) : null;
+                            return (
+                                <div key={player.id} >
+                                    <strong>{user?.name}</strong>: {' '}
+                                    {selectedDeck ? (
+                                        <span style={{ color: '#28a745' }}>
+                                            {selectedDeck.name} (ID: {player.selectedDeckId})
+                                        </span>
+                                    ) : (
+                                        <span style={{ color: '#dc3545' }}>デッキ未選択</span>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
