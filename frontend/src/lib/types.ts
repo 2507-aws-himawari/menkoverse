@@ -42,7 +42,6 @@ export interface MockBoardCard {
     hp: number;
     position: number;
     summonedTurn: number;
-    hasAttackedThisTurn: boolean;
 }
 
 export interface MockRoomPlayer {

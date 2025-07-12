@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import { calculatePPMax, calculatePlayerTurn, getActivePlayer, recoverPlayerPP, switchTurns, resetFollowerAttackStatus } from './gameLogic';
+import { calculatePPMax, calculatePlayerTurn, getActivePlayer, recoverPlayerPP, switchTurns, resetFollowerAttackStatus, canFollowerAttack, markFollowerAsAttacked, hasFollowerAttackedThisTurn } from './gameLogic';
 import {
     mockUsers,
     mockRooms,
@@ -112,7 +112,6 @@ export const mockApi = {
 
         mockRoomPlayers.push(newPlayer);
 
-        // 2人揃っても自動でゲーム開始しない（手動開始に変更）
         return newPlayer;
     },
 
@@ -673,8 +672,7 @@ export const mockApi = {
             attack: handCard.attack,
             hp: handCard.hp,
             position: currentBoardCards.length,
-            summonedTurn: player.turn,
-            hasAttackedThisTurn: false
+            summonedTurn: player.turn
         };
 
         mockBoard.push(boardCard);
@@ -735,18 +733,13 @@ export const mockApi = {
         }
 
         // 攻撃可能かチェック（召喚酔い・攻撃済みチェック）
-        if (attackerCard.summonedTurn === player.turn) {
-            return {
-                success: false,
-                message: 'このフォロワーは召喚酔いで攻撃できません',
-                reason: 'cannot_attack'
-            };
-        }
+        if (!canFollowerAttack(attackerCard, player.turn)) {
+            const isJustSummoned = attackerCard.summonedTurn === player.turn;
+            const hasAttacked = hasFollowerAttackedThisTurn(attackerCard.id);
 
-        if (attackerCard.hasAttackedThisTurn) {
             return {
                 success: false,
-                message: 'このフォロワーは既に攻撃済みです',
+                message: isJustSummoned ? 'このフォロワーは召喚酔いで攻撃できません' : 'このフォロワーは既に攻撃済みです',
                 reason: 'cannot_attack'
             };
         }
@@ -769,7 +762,7 @@ export const mockApi = {
             targetPlayer.hp = newHp;
 
             // 攻撃者は攻撃済みにする
-            attackerCard.hasAttackedThisTurn = true;
+            markFollowerAsAttacked(attackerCard.id);
 
             // 勝敗判定
             if (newHp <= 0) {
@@ -811,7 +804,7 @@ export const mockApi = {
             targetCard.hp -= attackerDamage;
 
             // 攻撃者は攻撃済みにする
-            attackerCard.hasAttackedThisTurn = true;
+            markFollowerAsAttacked(attackerCard.id);
 
             // 破壊チェック
             if (attackerCard.hp <= 0) {
@@ -894,8 +887,7 @@ export const mockApi = {
             attack: follower.attack,
             hp: follower.hp,
             position: currentBoardCards.length,
-            summonedTurn: targetPlayer.turn,
-            hasAttackedThisTurn: false
+            summonedTurn: targetPlayer.turn
         };
 
         mockBoard.push(boardCard);

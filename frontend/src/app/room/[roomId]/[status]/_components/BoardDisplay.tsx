@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { mockApi } from '@/lib/mockApi';
 import { getPlayersByRoomId, getFollowerById } from '@/lib/mockData';
-import { getActivePlayer } from '@/lib/gameLogic';
+import { getActivePlayer, canFollowerAttack, hasFollowerAttackedThisTurn } from '@/lib/gameLogic';
 import type { MockRoom, MockUser, MockBoardCard } from '@/lib/types';
 
 interface BoardDisplayProps {
@@ -156,8 +156,7 @@ export function BoardDisplay({ room, currentUser, refreshTrigger, onAttackWithFo
                                         if (!follower) return null;
 
                                         const canAttack = isCurrentPlayer && isActiveUser &&
-                                            boardCard.summonedTurn !== activePlayer?.turn &&
-                                            !boardCard.hasAttackedThisTurn;
+                                            canFollowerAttack(boardCard, activePlayer?.turn || 0);
                                         const isAttacking = attackingFollowerId === boardCard.id;
                                         const isTargetable = selectingTarget && !isCurrentPlayer;
 
@@ -256,10 +255,8 @@ export function BoardDisplay({ room, currentUser, refreshTrigger, onAttackWithFo
                                                     </div>
                                                 )}
                                                 {/* 攻撃不可能状態の表示 */}
-                                                {isCurrentPlayer && isActiveUser && (
-                                                    boardCard.summonedTurn === activePlayer?.turn ||
-                                                    boardCard.hasAttackedThisTurn
-                                                ) && (
+                                                {isCurrentPlayer && isActiveUser &&
+                                                    !canFollowerAttack(boardCard, activePlayer?.turn || 0) && (
                                                         <div style={{
                                                             marginTop: '8px',
                                                             fontSize: '10px',

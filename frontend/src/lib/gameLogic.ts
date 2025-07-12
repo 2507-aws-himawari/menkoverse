@@ -1,6 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import type { MockRoom, MockRoomPlayer, MockUser, MockBoardCard } from './types';
-import { getPlayersByRoomId, getBoardByRoomPlayerId } from './mockData';
+import { getPlayersByRoomId, getBoardByRoomPlayerId, attackedFollowersThisTurn } from './mockData';
 
 // ユーザー情報取得
 export const getUserById = (userId: string, mockUsers: MockUser[]): MockUser | undefined => {
@@ -87,8 +87,31 @@ export const switchTurns = (room: MockRoom, currentActivePlayer: MockRoomPlayer)
 
 // ターン開始時にフォロワーの攻撃状態をリセット
 export const resetFollowerAttackStatus = (roomPlayerId: string): void => {
-    const playerBoard = getBoardByRoomPlayerId(roomPlayerId);
-    playerBoard.forEach((card: MockBoardCard) => {
-        card.hasAttackedThisTurn = false;
-    });
+    // 攻撃済みフォロワーのリストをクリア
+    attackedFollowersThisTurn.clear();
+};
+
+// フォロワーが攻撃可能かどうかを判定
+export const canFollowerAttack = (boardCard: MockBoardCard, currentTurn: number): boolean => {
+    // 召喚酔い
+    if (boardCard.summonedTurn === currentTurn) {
+        return false;
+    }
+
+    // 攻撃済み
+    if (attackedFollowersThisTurn.has(boardCard.id)) {
+        return false;
+    }
+
+    return true;
+};
+
+// フォロワーを攻撃済みにマーク
+export const markFollowerAsAttacked = (boardCardId: string): void => {
+    attackedFollowersThisTurn.add(boardCardId);
+};
+
+// フォロワーが攻撃済みかどうかを判定
+export const hasFollowerAttackedThisTurn = (boardCardId: string): boolean => {
+    return attackedFollowersThisTurn.has(boardCardId);
 };
