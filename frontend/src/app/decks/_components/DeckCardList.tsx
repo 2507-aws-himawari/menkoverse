@@ -1,4 +1,4 @@
-import type { DeckCard } from '@/types/deck';
+import type { DeckCard, GroupedDeckCard } from '@/types/deck';
 import { useCardOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
@@ -10,13 +10,39 @@ interface Props {
 export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
   const { isLoading, error, execute } = useCardOperation();
 
-  const handleRemoveCard = async (deckCardId: string) => {
-    if (!confirm('このカードをデッキから削除しますか？')) {
+  // カードをグループ化する関数
+  const groupCardsByFollower = (cards: DeckCard[]): GroupedDeckCard[] => {
+    const grouped = cards.reduce((acc, card) => {
+      const key = card.followerId;
+      if (!acc[key]) {
+        acc[key] = {
+          follower: card.follower,
+          cards: [],
+          count: 0
+        };
+      }
+      acc[key].cards.push(card);
+      acc[key].count += 1;
+      return acc;
+    }, {} as Record<string, GroupedDeckCard>);
+
+    return Object.values(grouped);
+  };
+
+  const handleRemoveCard = async (groupedCard: GroupedDeckCard) => {
+    if (!confirm(`${groupedCard.follower.name}を1枚削除しますか？`)) {
       return;
     }
 
-    const result = await execute(deckCardId, async () => {
-      const response = await fetch(`/api/decks/${deckId}/cards?deckCardId=${deckCardId}`, {
+    // 最初のカードを削除対象とする
+    const targetCard = groupedCard.cards[0];
+    
+    if (!targetCard) {
+      return;
+    }
+    
+    const result = await execute(targetCard.id, async () => {
+      const response = await fetch(`/api/decks/${deckId}/cards?deckCardId=${targetCard.id}`, {
         method: 'DELETE',
       });
 
@@ -31,6 +57,8 @@ export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
       onCardRemoved();
     }
   };
+
+  const groupedCards = groupCardsByFollower(cards);
 
   return (
     <div style={{ marginTop: '20px' }}>
@@ -51,16 +79,23 @@ export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
       )}
       {cards.length > 0 ? (
         <div>
-          {cards.map((deckCard) => (
-            <div key={deckCard.id} style={{ padding: '10px', border: '1px solid #ddd', margin: '10px 0' }}>
-              <h3>{deckCard.follower.name}</h3>
-              <p>コスト: {deckCard.follower.cost} | 攻撃力: {deckCard.follower.attack} | HP: {deckCard.follower.hp}</p>
-              <button 
-                onClick={() => handleRemoveCard(deckCard.id)}
-                disabled={isLoading(deckCard.id)}
-                style={{ color: 'red' }}
+          {groupedCards.map((groupedCard) => (
+            <div key={groupedCard.follower.id} style={{ padding: '10px', border: '1px solid #ddd', margin: '10px 0' }}>
+              <h3>
+                {groupedCard.follower.name}
+                {groupedCard.count > 1 && (
+                  <span style={{ color: '#666', marginLeft: '10px' }}>×{groupedCard.count}</span>
+                )}
+              </h3>
+              <p>コスト: {groupedCard.follower.cost} | 攻撃力: {groupedCard.follower.attack} | HP: {groupedCard.follower.hp}</p>
+              <button
+                onClick={() => handleRemoveCard(groupedCard)}
+                disabled={groupedCard.cards[0] ? isLoading(groupedCard.cards[0].id) : false}
+                style={{ 
+                  color: 'red',
+                }}
               >
-                {isLoading(deckCard.id) ? '削除中...' : '削除'}
+                {(groupedCard.cards[0] && isLoading(groupedCard.cards[0].id)) ? '削除中...' : '削除'}
               </button>
             </div>
           ))}
