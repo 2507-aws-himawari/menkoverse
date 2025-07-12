@@ -64,6 +64,7 @@ export default function RoomStatusPage() {
                             onDamagePlayer={gameActions.handleDamagePlayer}
                             onDamageToSelf={gameActions.handleDamageToSelf}
                             onDamageToOpponent={gameActions.handleDamageToOpponent}
+                            onSummonFollowerToOpponent={gameActions.handleSummonFollowerToOpponent}
                         />
                     )}
                 </div>

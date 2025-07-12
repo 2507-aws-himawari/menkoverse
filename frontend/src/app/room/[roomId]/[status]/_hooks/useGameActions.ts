@@ -118,6 +118,27 @@ export function useGameActions() {
         }
     };
 
+    const handleSummonFollowerToOpponent = async (targetUserId: string, followerId: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const errorMessage = await gameActions.handleSummonFollowerToOpponent(
+                currentUser,
+                targetUserId,
+                followerId
+            );
+
+            if (errorMessage) {
+                setError(errorMessage);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : '相手フィールドへの召喚に失敗しました';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -128,5 +149,6 @@ export function useGameActions() {
         handleDamageToOpponent,
         handleSummonFollower,
         handleAttackWithFollower,
+        handleSummonFollowerToOpponent,
     };
 }

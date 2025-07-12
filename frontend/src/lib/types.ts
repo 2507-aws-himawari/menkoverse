@@ -41,8 +41,8 @@ export interface MockBoardCard {
     attack: number;
     hp: number;
     position: number;
-    summonedTurn: number; // 召喚されたターン数
-    hasAttackedThisTurn: boolean; // このターンに攻撃済みか
+    summonedTurn: number;
+    hasAttackedThisTurn: boolean;
 }
 
 export interface MockRoomPlayer {
@@ -152,6 +152,20 @@ export interface SummonFollowerResult {
     boardCard?: MockBoardCard;
     message?: string;
     reason?: 'board_full' | 'insufficient_pp' | 'invalid_card' | 'not_your_turn' | 'unknown';
+}
+//demo(後で消してよし)
+export interface SummonFollowerToOpponentInput {
+    roomId: string;
+    currentUser: MockUser;
+    targetUserId: string;
+    followerId: string;
+}
+//demo(後で消してよし)
+export interface SummonFollowerToOpponentResult {
+    success: boolean;
+    boardCard?: MockBoardCard;
+    message?: string;
+    reason?: 'board_full' | 'target_not_found' | 'follower_not_found' | 'unknown';
 }
 
 export interface AttackInput {

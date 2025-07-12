@@ -26,12 +26,20 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
 
     const {
         handleSummonFollower: originalHandleSummonFollower,
-        handleAttackWithFollower: originalHandleAttackWithFollower
+        handleAttackWithFollower: originalHandleAttackWithFollower,
+        handleSummonFollowerToOpponent: originalHandleSummonFollowerToOpponent
     } = useGameActions();
 
     // フォロワー召喚後にボードを更新
     const handleSummonFollower = async (handCardId: string) => {
         await originalHandleSummonFollower(handCardId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
+
+    // 相手フィールドにフォロワー召喚後にボードを更新
+    const handleSummonFollowerToOpponent = async (targetUserId: string, followerId: string) => {
+        await originalHandleSummonFollowerToOpponent(targetUserId, followerId);
         setBoardRefreshTrigger(prev => prev + 1);
         refreshData();
     };

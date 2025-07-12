@@ -146,6 +146,33 @@ export function useGameActionsCore(roomId: string | null) {
         }
     };
 
+    // 相手フィールドにフォロワーを召喚（デモ機能）
+    const handleSummonFollowerToOpponent = async (
+        currentUser: MockUser,
+        targetUserId: string,
+        followerId: string
+    ): Promise<string | null> => {
+        if (!roomId) return '部屋が見つかりません';
+
+        try {
+            const result = await mockApi.summonFollowerToOpponent({
+                roomId,
+                currentUser,
+                targetUserId,
+                followerId
+            });
+
+            if (result.success) {
+                await updateRoomCache(roomId);
+                return null;
+            } else {
+                return result.message || '相手フィールドへの召喚に失敗しました';
+            }
+        } catch (error) {
+            return error instanceof Error ? error.message : '相手フィールドへの召喚に失敗しました';
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -156,5 +183,6 @@ export function useGameActionsCore(roomId: string | null) {
         handleDamageToOpponent,
         handleSummonFollower,
         handleAttackWithFollower,
+        handleSummonFollowerToOpponent,
     };
 }

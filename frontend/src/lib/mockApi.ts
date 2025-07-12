@@ -44,7 +44,9 @@ import type {
     SummonFollowerInput,
     SummonFollowerResult,
     AttackInput,
-    AttackResult
+    AttackResult,
+    SummonFollowerToOpponentInput,
+    SummonFollowerToOpponentResult
 } from './types';
 
 export const mockApi = {
@@ -839,6 +841,69 @@ export const mockApi = {
             success: false,
             message: '無効な攻撃対象です',
             reason: 'invalid_target'
+        };
+    },
+
+    // 相手フィールドにフォロワーを召喚（デモ機能）
+    summonFollowerToOpponent: async (input: SummonFollowerToOpponentInput): Promise<SummonFollowerToOpponentResult> => {
+        const room = getRoomById(input.roomId);
+        if (!room) {
+            return {
+                success: false,
+                message: 'ルームが見つかりません',
+                reason: 'unknown'
+            };
+        }
+
+        // 対象プレイヤーを取得
+        const targetPlayer = getPlayerByUserIdAndRoomId(input.targetUserId, input.roomId);
+        if (!targetPlayer) {
+            return {
+                success: false,
+                message: '対象プレイヤーが見つかりません',
+                reason: 'target_not_found'
+            };
+        }
+
+        // フォロワー情報を取得
+        const follower = getFollowerById(input.followerId);
+        if (!follower) {
+            return {
+                success: false,
+                message: '指定されたフォロワーが見つかりません',
+                reason: 'follower_not_found'
+            };
+        }
+
+        // ボードの空きスペースをチェック
+        const currentBoardCards = getBoardByRoomPlayerId(targetPlayer.id);
+        if (currentBoardCards.length >= 5) {
+            return {
+                success: false,
+                message: 'ボードが満員です（最大5体まで）',
+                reason: 'board_full'
+            };
+        }
+
+        // ボードにカードを追加
+        const boardCard: MockBoardCard = {
+            id: `board_${targetPlayer.id}_${Date.now()}_demo`,
+            roomPlayerId: targetPlayer.id,
+            cardId: follower.id,
+            cost: follower.cost,
+            attack: follower.attack,
+            hp: follower.hp,
+            position: currentBoardCards.length,
+            summonedTurn: targetPlayer.turn,
+            hasAttackedThisTurn: false
+        };
+
+        mockBoard.push(boardCard);
+
+        return {
+            success: true,
+            boardCard: boardCard,
+            message: `相手フィールドに${follower.name}を召喚しました`
         };
     },
 };
