@@ -37,13 +37,6 @@ export function GameControls({
     return (
         <div>
             <div>
-                {/* 現在のターン情報 */}
-                {activeUser && (
-                    <p style={{ fontWeight: 'bold', color: 'blue' }}>
-                        現在のターン: {activeUser.name}
-                    </p>
-                )}
-
                 {/* アクティブプレイヤーのみに表示される操作 */}
                 {isActiveUser ? (
                     <ActivePlayerControls
