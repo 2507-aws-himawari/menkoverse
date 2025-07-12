@@ -34,7 +34,16 @@ export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
 
   return (
     <div style={{ marginTop: '20px' }}>
-      <h2>現在のカード ({cards.length}枚)</h2>
+      <h2>
+        現在のカード ({cards.length}/40枚)
+        {cards.length === 40 ? (
+          <span style={{ color: 'green', marginLeft: '10px' }}>✓ 完成</span>
+        ) : cards.length > 40 ? (
+          <span style={{ color: 'red', marginLeft: '10px' }}>⚠ 40枚を超えています</span>
+        ) : (
+          <span style={{ color: 'orange', marginLeft: '10px' }}>あと{40 - cards.length}枚</span>
+        )}
+      </h2>
       {error && (
         <div style={{ color: 'red', marginBottom: '10px' }}>
           {error}
