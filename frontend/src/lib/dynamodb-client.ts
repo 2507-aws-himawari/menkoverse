@@ -1,15 +1,16 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { fromIni } from '@aws-sdk/credential-providers';
 import type { CreateRoomRequest, JoinRoomRequest, CreateRoomResponse, JoinRoomResponse } from '@/types/game';
-import { checkAWSAvailability, mockRooms } from './mock-data';
+import { checkAWSAvailability, mockRooms, addMockRoom, updateMockRoom, getMockRoom } from './mock-data';
 
 // DynamoDB client configuration
-// AWS SDK will automatically use credentials from:
-// 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-// 2. AWS credentials file (~/.aws/credentials)
-// 3. IAM roles (when running on EC2/Lambda)
+// Use AWS profile if specified, otherwise use default credential chain
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'ap-northeast-1',
+  credentials: process.env.AWS_PROFILE 
+    ? fromIni({ profile: process.env.AWS_PROFILE })
+    : undefined, // Use default credential chain
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
