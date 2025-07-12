@@ -5,9 +5,10 @@ interface Props {
   deckId: string;
   availableCards: Follower[];
   onCardAdded: () => void;
+  currentCardCount: number;
 }
 
-export function AvailableCardList({ deckId, availableCards, onCardAdded }: Props) {
+export function AvailableCardList({ deckId, availableCards, onCardAdded, currentCardCount }: Props) {
   const { isLoading, error, execute } = useCardOperation();
 
   const handleAddCard = async (followerId: string) => {
@@ -32,8 +33,15 @@ export function AvailableCardList({ deckId, availableCards, onCardAdded }: Props
     }
   };
 
+  const canAddCard = currentCardCount < 40;
+
   return (
     <div style={{ marginTop: '20px' }}>
+      {!canAddCard && (
+        <div style={{ color: 'red', marginBottom: '10px', padding: '10px', border: '1px solid #red', backgroundColor: '#ffe6e6' }}>
+          デッキは40枚です。これ以上カードを追加できません。
+        </div>
+      )}
       {error && (
         <div style={{ color: 'red', marginBottom: '10px' }}>
           {error}
@@ -47,9 +55,16 @@ export function AvailableCardList({ deckId, availableCards, onCardAdded }: Props
               <p>コスト: {card.cost} | 攻撃力: {card.attack} | HP: {card.hp}</p>
               <button 
                 onClick={() => handleAddCard(card.id)}
-                disabled={isLoading(card.id)}
+                disabled={isLoading(card.id) || !canAddCard}
+                style={{ 
+                  color: !canAddCard ? '#ccc' : 'inherit',
+                  cursor: !canAddCard ? 'not-allowed' : 'pointer'
+                }}
               >
-                {isLoading(card.id) ? '追加中...' : 'デッキに追加'}
+                {isLoading(card.id) 
+                  ? '追加中...' 
+                    : 'デッキに追加'
+                }
               </button>
             </div>
           ))}
