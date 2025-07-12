@@ -3,7 +3,7 @@ name = "opencv"
 version = "0.1.0"
 description = "ArUco marker detection API using OpenCV and FastAPI"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.116.1",
     "opencv-python>=4.8.0",
