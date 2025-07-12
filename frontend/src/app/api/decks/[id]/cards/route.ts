@@ -90,7 +90,7 @@ export async function POST(
     }
 
     // デッキのカード枚数制限をチェック（40枚固定）
-    if (deck.DeckCards.length == 40) {
+    if (deck.DeckCards.length >= 40) {
       return NextResponse.json(
         { error: "デッキに追加できるカードは40枚までです" },
         { status: 400 }

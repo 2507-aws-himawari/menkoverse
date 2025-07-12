@@ -3,7 +3,14 @@ import { useState } from 'react';
 import type { DeckWithCards, CreateDeckInput, UpdateDeckInput } from '@/types/deck';
 import type { Follower } from '@/types/follower';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
 
 export function useDecks() {
   const { data, error, mutate } = useSWR<DeckWithCards[]>('/api/decks', fetcher);
@@ -18,7 +25,8 @@ export function useDecks() {
     });
 
     if (!response.ok) {
-      throw new Error('デッキの作成に失敗しました');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'デッキの作成に失敗しました');
     }
 
     const newDeck = await response.json();

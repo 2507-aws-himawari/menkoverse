@@ -89,7 +89,7 @@ model Deck {
     id        String @id @unique
     userId    String
     name      String
-    user      User @relation(fields: [userId], references: [id])
+    user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
     DeckCards DeckCard[]
 }
 
@@ -97,6 +97,6 @@ model DeckCard {
     id        String @id @unique
     deckId    String
     followerId String
-    deck      Deck @relation(fields: [deckId], references: [id])
-    follower  Follower @relation(fields: [followerId], references: [id])
+    deck      Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+    follower  Follower @relation(fields: [followerId], references: [id], onDelete: Cascade)
 }
