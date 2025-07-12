@@ -11,6 +11,9 @@ export function DeckListItem({ deck, onDeckDeleted }: Props) {
   const router = useRouter();
   const { loading, error, execute } = useAsyncOperation();
 
+  // カードの種類数を計算
+  const totalCards = deck.DeckCards?.length || 0;
+
   const handleDelete = async () => {
     if (!confirm('このデッキを削除しますか？')) {
       return;
@@ -37,10 +40,10 @@ export function DeckListItem({ deck, onDeckDeleted }: Props) {
     <div style={{ padding: '10px', border: '1px solid #ddd', margin: '10px 0' }}>
       <h3>{deck.name}</h3>
       <p>
-        カード数: {deck.DeckCards?.length || 0}/40枚
-        {(deck.DeckCards?.length || 0) === 40 ? (
+        カード数: {totalCards}/40枚
+        {totalCards === 40 ? (
           <span style={{ color: 'green', marginLeft: '10px' }}>✓ 完成</span>
-        ) : (deck.DeckCards?.length || 0) > 40 ? (
+        ) : totalCards > 40 ? (
           <span style={{ color: 'red', marginLeft: '10px' }}>⚠ 40枚を超えています</span>
         ) : (
           <span style={{ color: 'orange', marginLeft: '10px' }}>未完成</span>
