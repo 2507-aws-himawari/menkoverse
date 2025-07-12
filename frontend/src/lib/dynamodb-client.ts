@@ -240,7 +240,11 @@ export async function deleteRoom(roomId: string): Promise<void> {
 
 // 部屋参加（最小限実装）
 export async function joinRoom(roomId: string, request: JoinRoomRequest): Promise<JoinRoomResponse> {
+  console.log('joinRoom called with:', { roomId, request });
+  
   const awsAvailable = await checkAWSAvailability();
+  console.log('AWS availability check result:', awsAvailable);
+  
   if (!awsAvailable) {
     console.log('AWS not available, simulating room join');
     const mockRoom = getMockRoom(roomId);
@@ -260,6 +264,8 @@ export async function joinRoom(roomId: string, request: JoinRoomRequest): Promis
     };
   }
 
+  console.log('AWS is available, proceeding with DynamoDB operations');
+  
   try {
     // 部屋の存在確認
     const room = await getRoomById(roomId);
@@ -273,21 +279,25 @@ export async function joinRoom(roomId: string, request: JoinRoomRequest): Promis
 
     // プレイヤー情報をDynamoDBに保存
     const timestamp = Date.now();
+    const playerItem = {
+      PK: `ROOM#${roomId}`,
+      SK: `PLAYER#${request.playerId}`,
+      entityType: 'player',
+      playerId: request.playerId,
+      userId: request.userId,
+      roomId,
+      joinedAt: timestamp,
+      isActive: true
+    };
+    
+    console.log('Inserting player item to DynamoDB:', playerItem);
+    
     await docClient.send(new PutCommand({
       TableName: getTableName(),
-      Item: {
-        PK: `ROOM#${roomId}`,
-        SK: `PLAYER#${request.playerId}`,
-        entityType: 'player',
-        playerId: request.playerId,
-        userId: request.userId,
-        roomId,
-        joinedAt: timestamp,
-        isActive: true
-      }
+      Item: playerItem
     }));
 
-    console.log(`Player ${request.playerId} joined room ${roomId}`);
+    console.log(`✓ Player ${request.playerId} joined room ${roomId} successfully`);
     return {
       success: true,
       roomId,

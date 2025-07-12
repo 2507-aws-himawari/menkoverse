@@ -25,6 +25,7 @@ export default function JoinRoomPage() {
     };
 
     const handleJoinRoom = async () => {
+        console.log("hogehoge")
         if (!roomId.trim()) {
             setErrorMessage('部屋IDを入力してください');
             return;

@@ -6,11 +6,12 @@ import type { MockRoom, MockRoomPlayer } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { currentUserAtom } from '@/lib/atoms';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DeckSelector } from './DeckSelector';
 import { HandDisplay } from './HandDisplay';
 import { BoardDisplay } from './BoardDisplay';
 import { useGameActions } from '../_hooks/useGameActions';
+import { useGameWebSocket } from '@/hooks/useGameWebSocket';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -23,6 +24,22 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const [isStartingGame, setIsStartingGame] = useState(false);
     const [, forceUpdate] = useState({});
     const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
+
+    // WebSocket接続でプレイヤー参加イベントを監視
+    const { playerJoinEvents } = useGameWebSocket(
+        room.id, 
+        `player_${currentUser.id}_${Date.now()}`
+    );
+
+    // プレイヤー参加イベントを監視してUIを更新
+    useEffect(() => {
+        if (playerJoinEvents.length > 0) {
+            const latestEvent = playerJoinEvents[playerJoinEvents.length - 1];
+            console.log('New player joined:', latestEvent);
+            // 画面を再描画してプレイヤーリストを更新
+            refreshData();
+        }
+    }, [playerJoinEvents]);
 
     const {
         handleSummonFollower: originalHandleSummonFollower,
@@ -107,6 +124,25 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     return (
         <div>
             <h1>ゲームルーム</h1>
+            
+            {/* プレイヤー参加通知 */}
+            {playerJoinEvents.length > 0 && (
+                <div style={{ 
+                    backgroundColor: '#e8f5e8', 
+                    border: '1px solid #4CAF50', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                }}>
+                    {playerJoinEvents.map((event, index) => (
+                        <div key={index}>
+                            ✓ プレイヤーが参加しました: {event.userId}
+                        </div>
+                    ))}
+                </div>
+            )}
+            
             <div style={{ fontSize: '20px' }}>ターン: {Turn}</div>
             <div>
                 {roomPlayers.map((player: MockRoomPlayer, index: number) => {
