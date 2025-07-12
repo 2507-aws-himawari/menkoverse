@@ -71,27 +71,7 @@ export class OpenCVStack extends cdk.Stack {
           },
           sourceDirectory: 'opencv',
           codeConfiguration: {
-            configurationSource: 'API',
-            codeConfigurationValues: {
-              runtime: 'PYTHON_3',
-              buildCommand: 'pip install --no-cache-dir -r requirements.txt',
-              startCommand: 'python -m uvicorn main:app --host 0.0.0.0 --port 5000',
-              port: '5000',
-              runtimeEnvironmentVariables: [
-                {
-                  name: 'ENVIRONMENT',
-                  value: envName,
-                },
-                {
-                  name: 'FRONTEND_URL',
-                  value: props.frontendUrl ?? 'http://localhost:3000',
-                },
-                {
-                  name: 'PYTHONUNBUFFERED',
-                  value: '1',
-                },
-              ],
-            },
+            configurationSource: 'REPOSITORY',
           },
         },
       },
@@ -109,8 +89,8 @@ export class OpenCVStack extends cdk.Stack {
       healthCheckConfiguration: {
         protocol: 'HTTP',
         path: '/health',
-        interval: 30,
-        timeout: 15,
+        interval: 20,
+        timeout: 10,
         healthyThreshold: 2,
         unhealthyThreshold: 5,
       },
