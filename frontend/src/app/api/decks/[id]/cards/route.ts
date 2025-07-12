@@ -77,12 +77,23 @@ export async function POST(
         id: id,
         userId: session.user.id,
       },
+      include: {
+        DeckCards: true,
+      },
     });
 
     if (!deck) {
       return NextResponse.json(
         { error: "デッキが見つかりません" },
         { status: 404 }
+      );
+    }
+
+    // デッキのカード枚数制限をチェック（40枚固定）
+    if (deck.DeckCards.length == 40) {
+      return NextResponse.json(
+        { error: "デッキに追加できるカードは40枚までです" },
+        { status: 400 }
       );
     }
 
