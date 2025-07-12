@@ -19,12 +19,20 @@ export default function WebSocketTestPage() {
     gameState,
     error,
     sendMessage: sendWebSocketMessage,
-    getConnectionState
+    getConnectionState,
+    playerJoinEvents
   } = useGameWebSocket(selectedRoom?.id || '', playerId);
 
   const addLog = (message: string) => {
     setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
   };
+
+  useEffect(() => {
+    if (playerJoinEvents.length > 0) {
+      const latestEvent = playerJoinEvents[playerJoinEvents.length - 1];
+      addLog(`Player joined: ${latestEvent.playerId} (User: ${latestEvent.userId})`);
+    }
+  }, [playerJoinEvents]);
 
   useEffect(() => {
     if (gameState) {
@@ -150,6 +158,23 @@ export default function WebSocketTestPage() {
     sendWebSocketMessage(messageData);
     addLog(`→ Sent: ${JSON.stringify(messageData)}`);
     setMessage('');
+  };
+
+  const sendJoinRoomMessage = () => {
+    if (!selectedRoom || !isConnected) {
+      addLog('✗ Select a room and ensure WebSocket is connected');
+      return;
+    }
+
+    const joinData = {
+      action: 'joinRoom',
+      roomId: selectedRoom.id,
+      playerId,
+      userId
+    };
+
+    sendWebSocketMessage(joinData);
+    addLog(`→ Sent join room message: ${JSON.stringify(joinData)}`);
   };
 
   const leaveRoom = () => {
@@ -303,6 +328,17 @@ export default function WebSocketTestPage() {
               disabled={!selectedRoom || !isConnected}
             >
               Send
+            </button>
+          </div>
+          
+          {/* Test Player Join Button */}
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={sendJoinRoomMessage}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              disabled={!selectedRoom || !isConnected}
+            >
+              Test Player Join
             </button>
           </div>
         </div>

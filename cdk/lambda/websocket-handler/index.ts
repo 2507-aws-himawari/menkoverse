@@ -121,10 +121,40 @@ async function handleMessage(connectionId: string, event: any) {
       break;
     case 'joinRoom':
       console.log('Join room request:', body);
-      // Handle room join
-      // TODO: Implement room join logic
+      await handleJoinRoomMessage(connectionId, body);
       break;
     default:
       console.log('Unknown action:', body.action);
+  }
+}
+
+async function handleJoinRoomMessage(connectionId: string, body: any) {
+  const { roomId, playerId, userId } = body;
+  
+  if (!roomId || !playerId || !userId) {
+    console.error('Missing required fields for joinRoom:', { roomId, playerId, userId });
+    return;
+  }
+  
+  try {
+    // Create player record in DynamoDB
+    const timestamp = Date.now();
+    await dynamodb.put({
+      TableName: process.env.GAME_TABLE_NAME!,
+      Item: {
+        PK: `ROOM#${roomId}`,
+        SK: `PLAYER#${playerId}`,
+        entityType: 'player',
+        playerId,
+        userId,
+        roomId,
+        joinedAt: timestamp,
+        isActive: true
+      }
+    }).promise();
+    
+    console.log(`Player ${playerId} joined room ${roomId} via WebSocket`);
+  } catch (error) {
+    console.error('Error handling join room message:', error);
   }
 }
