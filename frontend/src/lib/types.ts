@@ -4,10 +4,33 @@ export interface MockUser {
     isAdmin: boolean;
 }
 
-export interface MockDeck {
+export interface MockFollower {
     id: string;
     name: string;
+    cost: number;
+    attack: number;
+    hp: number;
+}
+
+export interface MockDeck {
+    id: string;
     userId: string;
+    name: string;
+}
+
+export interface MockDeckCard {
+    id: string;
+    followerId: string;
+    deckId: string;
+}
+
+export interface MockHand {
+    id: string;
+    roomPlayerId: string;
+    cardId: string;
+    cost: number;
+    attack: number;
+    hp: number;
 }
 
 export interface MockRoomPlayer {
@@ -92,5 +115,16 @@ export interface DamagePlayerInput {
     roomId: string;
     targetUserId: string;
     damage: number;
+    currentUser: MockUser;
+}
+
+export interface DrawCardsInput {
+    roomId: string;
+    currentUser: MockUser;
+    count?: number; // デフォルトは5枚
+}
+
+export interface GetHandInput {
+    roomId: string;
     currentUser: MockUser;
 }
