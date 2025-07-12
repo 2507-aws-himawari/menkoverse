@@ -47,6 +47,8 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
     await docClient.send(new PutCommand({
       TableName: getTableName(),
       Item: {
+        PK: `ROOM#${roomId}`,
+        SK: 'METADATA',
         id: roomId,
         ownerId: request.ownerId,
         status: 'waiting',
@@ -76,6 +78,13 @@ export async function listRooms() {
   try {
     const response = await docClient.send(new ScanCommand({
       TableName: getTableName(),
+      FilterExpression: '#sk = :metadata',
+      ExpressionAttributeNames: {
+        '#sk': 'SK',
+      },
+      ExpressionAttributeValues: {
+        ':metadata': 'METADATA',
+      },
     }));
 
     const rooms = (response.Items || []).map((item: any) => ({
@@ -120,7 +129,8 @@ export async function getRoomById(roomId: string) {
     const response = await docClient.send(new GetCommand({
       TableName: getTableName(),
       Key: {
-        id: roomId,
+        PK: `ROOM#${roomId}`,
+        SK: 'METADATA',
       },
     }));
 
@@ -167,7 +177,8 @@ export async function updateRoomStatus(roomId: string, status: 'waiting' | 'play
     const response = await docClient.send(new UpdateCommand({
       TableName: getTableName(),
       Key: {
-        id: roomId,
+        PK: `ROOM#${roomId}`,
+        SK: 'METADATA',
       },
       UpdateExpression: 'SET #status = :status, updatedAt = :updatedAt',
       ExpressionAttributeNames: {
