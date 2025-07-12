@@ -1,16 +1,14 @@
 interface DeckBadgeProps {
   isRental: boolean;
-  className?: string;
 }
 
-export function DeckBadge({ isRental, className = '' }: DeckBadgeProps) {
+export function DeckBadge({ isRental }: DeckBadgeProps) {
   if (!isRental) {
     return null;
   }
 
   return (
-    <span 
-      className={`rental-deck-badge ${className}`}
+    <span
       style={{
         display: 'inline-block',
         padding: '2px 8px',
