@@ -24,11 +24,25 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const [, forceUpdate] = useState({});
     const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
 
-    const { handleSummonFollower: originalHandleSummonFollower } = useGameActions();
+    const {
+        handleSummonFollower: originalHandleSummonFollower,
+        handleAttackWithFollower: originalHandleAttackWithFollower
+    } = useGameActions();
 
     // フォロワー召喚後にボードを更新
     const handleSummonFollower = async (handCardId: string) => {
         await originalHandleSummonFollower(handCardId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
+
+    // フォロワー攻撃後にボードを更新
+    const handleAttackWithFollower = async (
+        attackerBoardCardId: string,
+        targetType: 'follower' | 'player',
+        targetId: string
+    ) => {
+        await originalHandleAttackWithFollower(attackerBoardCardId, targetType, targetId);
         setBoardRefreshTrigger(prev => prev + 1);
         refreshData();
     };
@@ -231,6 +245,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 room={room}
                                 currentUser={currentUser}
                                 refreshTrigger={boardRefreshTrigger}
+                                onAttackWithFollower={handleAttackWithFollower}
                             />
                         </div>
                         {/* 現在のユーザーの手札を表示 */}

@@ -1,6 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
-import type { MockRoom, MockRoomPlayer, MockUser } from './types';
-import { getPlayersByRoomId } from './mockData';
+import type { MockRoom, MockRoomPlayer, MockUser, MockBoardCard } from './types';
+import { getPlayersByRoomId, getBoardByRoomPlayerId } from './mockData';
 
 // ユーザー情報取得
 export const getUserById = (userId: string, mockUsers: MockUser[]): MockUser | undefined => {
@@ -83,4 +83,12 @@ export const switchTurns = (room: MockRoom, currentActivePlayer: MockRoomPlayer)
         player2.turnStatus = 'ended';
         recoverPlayerPP(player1);
     }
+};
+
+// ターン開始時にフォロワーの攻撃権をリセット
+export const resetFollowerAttackStatus = (roomPlayerId: string): void => {
+    const playerBoard = getBoardByRoomPlayerId(roomPlayerId);
+    playerBoard.forEach((card: MockBoardCard) => {
+        card.canAttack = true;
+    });
 };
