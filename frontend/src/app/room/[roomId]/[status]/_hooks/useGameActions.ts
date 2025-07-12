@@ -74,6 +74,24 @@ export function useGameActions() {
         });
     };
 
+    const handleSummonFollower = async (handCardId: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const errorMessage = await gameActions.handleSummonFollower(currentUser, handCardId);
+
+            if (errorMessage) {
+                // エラーメッセージがある場合はエラーとして設定
+                setError(errorMessage);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : '召喚に失敗しました';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -82,5 +100,6 @@ export function useGameActions() {
         handleDamagePlayer,
         handleDamageToSelf,
         handleDamageToOpponent,
+        handleSummonFollower,
     };
 }

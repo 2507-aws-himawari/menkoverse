@@ -95,6 +95,28 @@ export function useGameActionsCore(roomId: string | null) {
         await handleDamagePlayer(currentUser, opponentUserId, damage);
     };
 
+    // フォロワーを召喚
+    const handleSummonFollower = async (currentUser: MockUser, handCardId: string): Promise<string | null> => {
+        if (!roomId) return '部屋が見つかりません';
+
+        try {
+            const result = await mockApi.summonFollower({
+                roomId,
+                currentUser,
+                handCardId
+            });
+
+            if (result.success) {
+                await updateRoomCache(roomId);
+                return null; // 成功の場合はnullを返す
+            } else {
+                return result.message || '召喚に失敗しました'; // エラーメッセージを返す
+            }
+        } catch (error) {
+            return error instanceof Error ? error.message : '召喚に失敗しました';
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -103,5 +125,6 @@ export function useGameActionsCore(roomId: string | null) {
         handleDamagePlayer,
         handleDamageToSelf,
         handleDamageToOpponent,
+        handleSummonFollower,
     };
 }

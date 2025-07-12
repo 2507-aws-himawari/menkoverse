@@ -9,18 +9,29 @@ import { currentUserAtom } from '@/lib/atoms';
 import { useState } from 'react';
 import { DeckSelector } from './DeckSelector';
 import { HandDisplay } from './HandDisplay';
+import { BoardDisplay } from './BoardDisplay';
+import { useGameActions } from '../_hooks/useGameActions';
 
 interface RoomDisplayProps {
     room: MockRoom;
 }
 
 export function RoomDisplay({ room }: RoomDisplayProps) {
-    // プレイヤー情報を取得
     const roomPlayers = getPlayersByRoomId(room.id);
     const router = useRouter();
     const [currentUser] = useAtom(currentUserAtom);
     const [isStartingGame, setIsStartingGame] = useState(false);
     const [, forceUpdate] = useState({});
+    const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
+
+    const { handleSummonFollower: originalHandleSummonFollower } = useGameActions();
+
+    // フォロワー召喚後にボードを更新
+    const handleSummonFollower = async (handCardId: string) => {
+        await originalHandleSummonFollower(handCardId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
 
     const refreshData = () => {
         forceUpdate({});
@@ -115,17 +126,6 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                                 <span style={{ color: 'green' }}>選択済み</span>
                                             ) : (
                                                 <span style={{ color: 'orange' }}>未選択</span>
-                                            )}
-                                        </p>
-                                    )}
-
-                                    {room.status === 'playing' && (
-                                        <p >
-                                            [DEBUG] デッキ: {selectedDeck ? selectedDeck.name : '未選択'}
-                                            {player.selectedDeckId && (
-                                                <span style={{ marginLeft: '5px' }}>
-                                                    (ID: {player.selectedDeckId})
-                                                </span>
                                             )}
                                         </p>
                                     )}
@@ -225,29 +225,21 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
 
                 {room.status === 'playing' && (
                     <div>
-                        <h4>
-                            [DEBUG] デッキ選択状況
-                        </h4>
-                        {roomPlayers.map((player, index) => {
-                            const user = getUserById(player.userId, mockUsers);
-                            const selectedDeck = player.selectedDeckId ? getDeckById(player.selectedDeckId) : null;
-                            return (
-                                <div key={player.id}>
-                                    <strong>{user?.name}</strong>: {' '}
-                                    {selectedDeck ? (
-                                        <span style={{ color: '#28a745' }}>
-                                            {selectedDeck.name} (ID: {player.selectedDeckId})
-                                        </span>
-                                    ) : (
-                                        <span style={{ color: '#dc3545' }}>デッキ未選択</span>
-                                    )}
-                                </div>
-                            );
-                        })}
-
+                        {/* バトルフィールド（ボード）を表示 */}
+                        <div style={{ marginTop: '20px' }}>
+                            <BoardDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                refreshTrigger={boardRefreshTrigger}
+                            />
+                        </div>
                         {/* 現在のユーザーの手札を表示 */}
                         <div style={{ marginTop: '20px' }}>
-                            <HandDisplay room={room} currentUser={currentUser} />
+                            <HandDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                onSummonFollower={handleSummonFollower}
+                            />
                         </div>
                     </div>
                 )}

@@ -33,6 +33,16 @@ export interface MockHand {
     hp: number;
 }
 
+export interface MockBoardCard {
+    id: string;
+    roomPlayerId: string;
+    cardId: string;
+    cost: number;
+    attack: number;
+    hp: number;
+    position: number; // ボード上の位置 (0-6)
+}
+
 export interface MockRoomPlayer {
     id: string;
     roomId: string;
@@ -127,4 +137,17 @@ export interface DrawCardsInput {
 export interface GetHandInput {
     roomId: string;
     currentUser: MockUser;
+}
+
+export interface SummonFollowerInput {
+    roomId: string;
+    currentUser: MockUser;
+    handCardId: string;
+}
+
+export interface SummonFollowerResult {
+    success: boolean;
+    boardCard?: MockBoardCard;
+    message?: string;
+    reason?: 'board_full' | 'insufficient_pp' | 'invalid_card' | 'not_your_turn' | 'unknown';
 }

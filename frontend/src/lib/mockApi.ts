@@ -14,9 +14,9 @@ import {
     getDeckById,
     getDeckCardsByDeckId,
     getHandsByRoomPlayerId,
-    updateMockRoomPlayers,
-    updateMockHands,
-    getFollowerById
+    getFollowerById,
+    getBoardByRoomPlayerId,
+    mockBoard
 } from './mockData';
 import type {
     MockUser,
@@ -26,6 +26,7 @@ import type {
     MockDeckCard,
     MockHand,
     MockFollower,
+    MockBoardCard,
     CreateRoomInput,
     JoinRoomInput,
     GetRoomInput,
@@ -39,7 +40,9 @@ import type {
     ForceEndOpponentTurnInput,
     DamagePlayerInput,
     DrawCardsInput,
-    GetHandInput
+    GetHandInput,
+    SummonFollowerInput,
+    SummonFollowerResult
 } from './types';
 
 export const mockApi = {
@@ -338,7 +341,6 @@ export const mockApi = {
             }
         } catch (error) {
             console.error(`Failed to draw card at turn start for player ${input.currentUser.name}:`, error);
-            // ドローに失敗してもターン開始は継続
         }
 
         return player;
@@ -405,7 +407,7 @@ export const mockApi = {
         return room;
     },
 
-    // PP消費（デモ用）
+    // PP消費
     consumePP: async (input: ConsumePPInput): Promise<MockRoomPlayer | null> => {
         const room = getRoomById(input.roomId);
         if (!room) return null;
@@ -579,5 +581,99 @@ export const mockApi = {
 
         const hands = getHandsByRoomPlayerId(player.id);
         return hands;
+    },
+
+    // プレイヤーのボードを取得
+    getBoard: async (input: { roomPlayerId: string }): Promise<MockBoardCard[]> => {
+        const boards = getBoardByRoomPlayerId(input.roomPlayerId);
+        return boards;
+    },
+
+    // フォロワーを召喚
+    summonFollower: async (input: SummonFollowerInput): Promise<SummonFollowerResult> => {
+        const room = getRoomById(input.roomId);
+        if (!room) {
+            return {
+                success: false,
+                message: 'ルームが見つかりません',
+                reason: 'unknown'
+            };
+        }
+
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!player) {
+            return {
+                success: false,
+                message: 'プレイヤーが見つかりません',
+                reason: 'unknown'
+            };
+        }
+
+        // アクティブプレイヤーかチェック
+        const activePlayer = getActivePlayer(room);
+        if (!activePlayer || activePlayer.userId !== input.currentUser.id) {
+            return {
+                success: false,
+                message: 'あなたのターンではありません',
+                reason: 'not_your_turn'
+            };
+        }
+
+        // 手札から該当カードを取得
+        const handCard = mockHands.find(hand => hand.id === input.handCardId && hand.roomPlayerId === player.id);
+        if (!handCard) {
+            return {
+                success: false,
+                message: '指定された手札カードが見つかりません',
+                reason: 'invalid_card'
+            };
+        }
+
+        // PP不足チェック
+        if (player.pp < handCard.cost) {
+            return {
+                success: false,
+                message: `PPが不足しています（必要: ${handCard.cost}, 現在: ${player.pp}）`,
+                reason: 'insufficient_pp'
+            };
+        }
+
+        // ボードの空きスペースをチェック
+        const currentBoardCards = getBoardByRoomPlayerId(player.id);
+        if (currentBoardCards.length >= 5) {
+            return {
+                success: false,
+                message: 'ボードが満員です（最大5体まで）',
+                reason: 'board_full'
+            };
+        }
+
+        // PP消費
+        player.pp -= handCard.cost;
+
+        // ボードにカードを追加
+        const boardCard: MockBoardCard = {
+            id: `board_${player.id}_${Date.now()}`,
+            roomPlayerId: player.id,
+            cardId: handCard.cardId,
+            cost: handCard.cost,
+            attack: handCard.attack,
+            hp: handCard.hp,
+            position: currentBoardCards.length
+        };
+
+        mockBoard.push(boardCard);
+
+        // 手札からカードを削除
+        const handIndex = mockHands.findIndex(hand => hand.id === input.handCardId);
+        if (handIndex !== -1) {
+            mockHands.splice(handIndex, 1);
+        }
+
+        return {
+            success: true,
+            boardCard: boardCard,
+            message: 'フォロワーを召喚しました'
+        };
     },
 };
