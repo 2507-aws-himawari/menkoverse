@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAtom } from 'jotai';
+import { errorAtom } from '@/lib/atoms';
 import { mockApi } from '@/lib/mockApi';
 import { getFollowerById, getPlayerByUserIdAndRoomId, getPlayersByRoomId } from '@/lib/mockData';
 import { getActivePlayer } from '@/lib/gameLogic';
@@ -17,6 +19,8 @@ export function HandDisplay({ room, currentUser, onSummonFollower }: HandDisplay
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [summoning, setSummoning] = useState<string | null>(null);
+    const [notification, setNotification] = useState<string | null>(null);
+    const [errorFromAtom] = useAtom(errorAtom);
 
     // 現在のプレイヤー情報を取得
     const currentPlayer = getPlayerByUserIdAndRoomId(currentUser.id, room.id);
@@ -27,17 +31,26 @@ export function HandDisplay({ room, currentUser, onSummonFollower }: HandDisplay
     const handleSummon = async (handCardId: string) => {
         if (!onSummonFollower) return;
 
-        try {
-            setSummoning(handCardId);
-            await onSummonFollower(handCardId);
-            await loadHand(); // 手札を再読み込み
-        } catch (error) {
-            console.error('Summon failed:', error);
-            setError(error instanceof Error ? error.message : '召喚に失敗しました');
-        } finally {
-            setSummoning(null);
-        }
+        setSummoning(handCardId);
+        setNotification(null);
+
+        await onSummonFollower(handCardId);
+        await loadHand(); // 手札を再読み込み
+        setSummoning(null);
     };
+
+    // エラーアトムからエラーメッセージを監視
+    useEffect(() => {
+        if (errorFromAtom) {
+            // ボードが満員の場合やPP不足の場合は通知として表示
+            if (errorFromAtom.includes('ボードが満員です') || errorFromAtom.includes('PPが不足しています')) {
+                setNotification(errorFromAtom);
+                setTimeout(() => setNotification(null), 3000); // 3秒後に消去
+            } else {
+                setError(errorFromAtom);
+            }
+        }
+    }, [errorFromAtom]);
 
     // 手札を取得
     const loadHand = async () => {
@@ -92,6 +105,21 @@ export function HandDisplay({ room, currentUser, onSummonFollower }: HandDisplay
             borderRadius: '5px'
         }}>
             <h4>手札 ({hand.length}枚)</h4>
+
+            {/* 通知メッセージ */}
+            {notification && (
+                <div style={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ffeaa7',
+                    marginBottom: '10px',
+                    fontSize: '14px'
+                }}>
+                    {notification}
+                </div>
+            )}
 
             {hand.length === 0 ? (
                 <p>手札にカードがありません</p>

@@ -96,18 +96,24 @@ export function useGameActionsCore(roomId: string | null) {
     };
 
     // フォロワーを召喚
-    const handleSummonFollower = async (currentUser: MockUser, handCardId: string): Promise<void> => {
-        if (!roomId) return;
+    const handleSummonFollower = async (currentUser: MockUser, handCardId: string): Promise<string | null> => {
+        if (!roomId) return '部屋が見つかりません';
 
         try {
-            await mockApi.summonFollower({
+            const result = await mockApi.summonFollower({
                 roomId,
                 currentUser,
                 handCardId
             });
-            await updateRoomCache(roomId);
+
+            if (result.success) {
+                await updateRoomCache(roomId);
+                return null; // 成功の場合はnullを返す
+            } else {
+                return result.message || '召喚に失敗しました'; // エラーメッセージを返す
+            }
         } catch (error) {
-            throw error;
+            return error instanceof Error ? error.message : '召喚に失敗しました';
         }
     };
 
