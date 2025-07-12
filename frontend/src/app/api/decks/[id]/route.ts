@@ -2,12 +2,13 @@ import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { updateDeckSchema } from "@/lib/schema/deck";
 import { type NextRequest, NextResponse } from "next/server";
+import { isRentalDeck } from "@/lib/utils/deckUtils";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const session = await auth();
@@ -33,14 +34,29 @@ export async function GET(
       },
     });
 
-    if (!deck) {
+    const rentalDeck = await db.rentalDeck.findFirst({
+      where: {
+        id: id,
+      },
+      include: {
+        RentalDeckCards: {
+          include: {
+            follower: true,
+          },
+        },
+      },
+    });
+
+    if (!deck && !rentalDeck) {
       return NextResponse.json(
         { error: "デッキが見つかりません" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(deck);
+    // レンタルデッキの場合はレンタルデッキを返し、通常のデッキの場合は通常のデッキを返す
+    const resultDeck = deck || rentalDeck;
+    return NextResponse.json(resultDeck);
   } catch (error) {
     console.error("デッキ取得エラー:", error);
     return NextResponse.json(
@@ -63,6 +79,14 @@ export async function PUT(
       return NextResponse.json(
         { error: "認証が必要です" },
         { status: 401 }
+      );
+    }
+
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(id)) {
+      return NextResponse.json(
+        { error: "レンタルデッキは変更・削除できません" },
+        { status: 403 }
       );
     }
 
@@ -131,6 +155,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: "認証が必要です" },
         { status: 401 }
+      );
+    }
+
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(id)) {
+      return NextResponse.json(
+        { error: "レンタルデッキは変更・削除できません" },
+        { status: 403 }
       );
     }
 
