@@ -4,12 +4,13 @@ import { useRouter } from 'next/navigation';
 import { useDecks } from '@/app/decks/_hooks/useDecks';
 import { CreateDeckForm } from './_components/CreateDeckForm';
 import { DeckListItem } from './_components/DeckListItem';
+import type { DeckWithCards } from '@/types/deck';
 
 export default function DecksPage() {
   const router = useRouter();
   const { decks, error, loading, mutate } = useDecks();
 
-  const handleDeckCreated = (newDeck: any) => {
+  const handleDeckCreated = (newDeck: DeckWithCards) => {
     router.push(`/decks/${newDeck.id}`);
   };
 
