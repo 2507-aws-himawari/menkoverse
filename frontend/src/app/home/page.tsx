@@ -9,6 +9,10 @@ export default function HomePage() {
         router.push('/room/join');
     };
 
+    const handleDeckManagement = () => {
+        router.push('/decks');
+    };
+
     return (
         <div>
             <div>
@@ -19,7 +23,10 @@ export default function HomePage() {
                     <button onClick={handleJoinGame}>
                         ゲーム参加
                     </button>
-<SignOut />
+                    <button onClick={handleDeckManagement}>
+                        デッキ管理
+                    </button>
+                    <SignOut />
                 </div>
             </div>
         </div>
