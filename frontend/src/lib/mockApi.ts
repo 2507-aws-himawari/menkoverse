@@ -207,7 +207,6 @@ export const mockApi = {
         if (firstActivePlayer) {
             const firstUser = mockUsers.find(u => u.id === firstActivePlayer.userId);
             if (firstUser) {
-                console.log(`★ StartGame: Auto-starting first turn for player ${firstUser.name}`);
 
                 // ターン開始時の処理を直接実行
                 const firstPlayer = getPlayerByUserIdAndRoomId(firstUser.id, input.roomId);
@@ -230,7 +229,6 @@ export const mockApi = {
                                 };
 
                                 mockHands.push(newHandCard);
-                                console.log(`★ FIRST TURN START: Player ${firstUser.name} drew 1 card (${follower.name}) at first turn start`);
                             }
                         }
                     }
@@ -294,15 +292,11 @@ export const mockApi = {
 
     // ターン開始時のPP回復
     startTurn: async (input: StartTurnInput): Promise<MockRoomPlayer | null> => {
-        console.log(`★ startTurn called for player ${input.currentUser.name} in room ${input.roomId}`);
-
         const room = getRoomById(input.roomId);
         if (!room) return null;
 
         const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
-
-        console.log(`★ Found player:`, { id: player.id, userId: player.userId, selectedDeckId: player.selectedDeckId });
 
         const roomPlayers = getPlayersByRoomId(input.roomId);
         const playerIndex = roomPlayers.findIndex((p: MockRoomPlayer) => p.userId === input.currentUser.id);
@@ -338,11 +332,6 @@ export const mockApi = {
 
                             // 手札に直接追加
                             mockHands.push(newHandCard);
-
-                            console.log(`★ TURN START: Player ${input.currentUser.name} drew 1 card (${follower.name})`);
-                            console.log(`★ New hand card:`, newHandCard);
-                            console.log(`★ Total mockHands now:`, mockHands.length);
-                            console.log(`★ Player hands now:`, mockHands.filter(h => h.roomPlayerId === player.id).length);
                         }
                     }
                 }
@@ -371,18 +360,12 @@ export const mockApi = {
 
         if (!player1 || !player2) return room;
 
-        console.log(`★ EndTurn: Player ${input.currentUser.name} is ending their turn`);
-
         switchTurns(room, activePlayer);
 
-        // 次のターンのプレイヤーのターン開始処理を自動実行
         const newActivePlayer = getActivePlayer(room);
         if (newActivePlayer) {
             const nextUser = mockUsers.find(u => u.id === newActivePlayer.userId);
             if (nextUser) {
-                console.log(`★ EndTurn: Auto-starting turn for next player ${nextUser.name}`);
-
-                // ターン開始時の処理を直接実行（循環参照回避のため）
                 const nextPlayer = getPlayerByUserIdAndRoomId(nextUser.id, input.roomId);
                 if (nextPlayer) {
                     const roomPlayersForNext = getPlayersByRoomId(input.roomId);
@@ -411,7 +394,6 @@ export const mockApi = {
                                     };
 
                                     mockHands.push(newHandCard);
-                                    console.log(`★ TURN START AUTO: Player ${nextUser.name} drew 1 card (${follower.name}) at turn start`);
                                 }
                             }
                         }
@@ -471,8 +453,6 @@ export const mockApi = {
             throw new Error('プレイヤーが不足しています');
         }
 
-        console.log(`★ ForceEndOpponentTurn: Forcing end turn for player ${activePlayer ? mockUsers.find(u => u.id === activePlayer.userId)?.name : 'Unknown'}`);
-
         switchTurns(room, activePlayer);
 
         // 次のターンのプレイヤーのターン開始処理を自動実行（endTurnと同様）
@@ -480,8 +460,6 @@ export const mockApi = {
         if (newActivePlayer) {
             const nextUser = mockUsers.find(u => u.id === newActivePlayer.userId);
             if (nextUser) {
-                console.log(`★ ForceEndOpponentTurn: Auto-starting turn for next player ${nextUser.name}`);
-
                 // ターン開始時の処理を直接実行
                 const nextPlayer = getPlayerByUserIdAndRoomId(nextUser.id, input.roomId);
                 if (nextPlayer) {
@@ -511,7 +489,6 @@ export const mockApi = {
                                     };
 
                                     mockHands.push(newHandCard);
-                                    console.log(`★ FORCE TURN START: Player ${nextUser.name} drew 1 card (${follower.name}) at forced turn start`);
                                 }
                             }
                         }
@@ -563,9 +540,7 @@ export const mockApi = {
 
         const count = input.count || 5;
 
-        console.log(`Getting deck cards for deckId: ${player.selectedDeckId}`);
         const deckCards = getDeckCardsByDeckId(player.selectedDeckId);
-        console.log(`Found ${deckCards.length} cards in deck ${player.selectedDeckId}:`, deckCards);
 
         if (deckCards.length === 0) {
             throw new Error(`デッキ「${player.selectedDeckId}」にカードがありません。デッキのカード構成を確認してください。`);
@@ -594,10 +569,6 @@ export const mockApi = {
         // 手札に直接追加
         mockHands.push(...newHandCards);
 
-        console.log(`★ MANUAL DRAW: Player ${input.currentUser.name} drew ${count} cards from deck ${player.selectedDeckId}`);
-        console.log(`★ New hand cards:`, newHandCards);
-        console.log(`★ Total mockHands now:`, mockHands.length);
-        console.log(`★ Player hands now:`, mockHands.filter(h => h.roomPlayerId === player.id).length);
         return newHandCards;
     },
 
@@ -607,15 +578,6 @@ export const mockApi = {
         if (!player) throw new Error('プレイヤーが見つかりません');
 
         const hands = getHandsByRoomPlayerId(player.id);
-
-        // 現在のアクティブプレイヤーも表示
-        const room = getRoomById(input.roomId);
-        const activePlayer = room ? getActivePlayer(room) : null;
-        const activeUser = activePlayer ? mockUsers.find(u => u.id === activePlayer.userId) : null;
-
-        console.log(`★ Getting hand for player ${input.currentUser.name} (playerId: ${player.id}):`, hands.length, 'cards');
-        console.log(`★ Current active player: ${activeUser ? activeUser.name : 'None'}`);
-        console.log(`★ Hand details:`, hands.map(h => ({ id: h.id, cardId: h.cardId })));
         return hands;
     },
 };

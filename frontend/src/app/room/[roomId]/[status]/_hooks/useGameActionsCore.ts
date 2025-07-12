@@ -17,12 +17,10 @@ export function useGameActionsCore(roomId: string | null) {
             await mockApi.startTurn({
                 roomId,
                 currentUser
-            });
-            await updateRoomCache(roomId);
+            }); await updateRoomCache(roomId);
 
             // ターン開始イベントを発火して HandDisplay に手札更新を促す
             window.dispatchEvent(new CustomEvent('turnStarted'));
-            console.log('★ Turn started event dispatched');
         } catch (error) {
             throw error;
         }
