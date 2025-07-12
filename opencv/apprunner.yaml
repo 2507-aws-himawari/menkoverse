@@ -14,8 +14,8 @@ run:
   command: python -m uvicorn main:app --host 0.0.0.0 --port 5000
   network:
     port: 5000
-    env:
-      ENVIRONMENT: dev
-      FRONTEND_URL: http://localhost:3000
-      PYTHONUNBUFFERED: '1'
-      PIP_NO_CACHE_DIR: '1'
+  env:
+    ENVIRONMENT: dev
+    FRONTEND_URL: http://localhost:3000
+    PYTHONUNBUFFERED: 1
+    PIP_NO_CACHE_DIR: 1
