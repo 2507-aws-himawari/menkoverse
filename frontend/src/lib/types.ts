@@ -4,6 +4,46 @@ export interface MockUser {
     isAdmin: boolean;
 }
 
+export interface MockFollower {
+    id: string;
+    name: string;
+    cost: number;
+    attack: number;
+    hp: number;
+}
+
+export interface MockDeck {
+    id: string;
+    userId: string;
+    name: string;
+}
+
+export interface MockDeckCard {
+    id: string;
+    followerId: string;
+    deckId: string;
+}
+
+export interface MockHand {
+    id: string;
+    roomPlayerId: string;
+    cardId: string;
+    cost: number;
+    attack: number;
+    hp: number;
+}
+
+export interface MockBoardCard {
+    id: string;
+    roomPlayerId: string;
+    cardId: string;
+    cost: number;
+    attack: number;
+    hp: number;
+    position: number;
+    summonedTurn: number;
+}
+
 export interface MockRoomPlayer {
     id: string;
     roomId: string;
@@ -12,6 +52,7 @@ export interface MockRoomPlayer {
     pp: number;
     turn: number;
     turnStatus: 'active' | 'ended';
+    selectedDeckId?: string;
 }
 
 export interface MockRoom {
@@ -33,6 +74,23 @@ export interface JoinRoomInput {
 
 export interface GetRoomInput {
     roomId: string;
+}
+
+export interface StartGameInput {
+    roomId: string;
+    currentUser: MockUser;
+    // デモ用フラグ
+    isDemo?: boolean;
+}
+
+export interface SelectDeckInput {
+    roomId: string;
+    currentUser: MockUser;
+    deckId: string;
+}
+
+export interface GetDecksInput {
+    currentUser: MockUser;
 }
 
 export interface UpdatePlayerStatusInput {
@@ -69,4 +127,57 @@ export interface DamagePlayerInput {
     targetUserId: string;
     damage: number;
     currentUser: MockUser;
+}
+
+export interface DrawCardsInput {
+    roomId: string;
+    currentUser: MockUser;
+    count?: number; // デフォルトは5枚
+}
+
+export interface GetHandInput {
+    roomId: string;
+    currentUser: MockUser;
+}
+
+export interface SummonFollowerInput {
+    roomId: string;
+    currentUser: MockUser;
+    handCardId: string;
+}
+
+export interface SummonFollowerResult {
+    success: boolean;
+    boardCard?: MockBoardCard;
+    message?: string;
+    reason?: 'board_full' | 'insufficient_pp' | 'invalid_card' | 'not_your_turn' | 'unknown';
+}
+//demo(後で消してよし)
+export interface SummonFollowerToOpponentInput {
+    roomId: string;
+    currentUser: MockUser;
+    targetUserId: string;
+    followerId: string;
+}
+//demo(後で消してよし)
+export interface SummonFollowerToOpponentResult {
+    success: boolean;
+    boardCard?: MockBoardCard;
+    message?: string;
+    reason?: 'board_full' | 'target_not_found' | 'follower_not_found' | 'unknown';
+}
+
+export interface AttackInput {
+    roomId: string;
+    currentUser: MockUser;
+    attackerBoardCardId: string;
+    targetType: 'follower' | 'player';
+    targetId: string;
+}
+
+export interface AttackResult {
+    success: boolean;
+    message?: string;
+    reason?: 'not_your_turn' | 'cannot_attack' | 'invalid_target' | 'attacker_not_found' | 'target_not_found' | 'unknown';
+    destroyedFollowers?: string[];
 }

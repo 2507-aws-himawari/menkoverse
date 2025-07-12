@@ -50,6 +50,7 @@ model User {
     accounts      Account[]
     sessions      Session[]
     Authenticators Authenticator[]
+    deck         Deck[]
 }
 
 model VerificationToken {
@@ -81,4 +82,21 @@ model Follower {
     cost    Int
     attack  Int
     hp      Int
+    DeckCards DeckCard[]
+}
+
+model Deck {
+    id        String @id @unique
+    userId    String
+    name      String
+    user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    DeckCards DeckCard[]
+}
+
+model DeckCard {
+    id        String @id @unique
+    deckId    String
+    followerId String
+    deck      Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+    follower  Follower @relation(fields: [followerId], references: [id], onDelete: Cascade)
 }

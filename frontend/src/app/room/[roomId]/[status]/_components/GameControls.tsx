@@ -13,6 +13,7 @@ interface GameControlsProps {
     onDamagePlayer: (targetUserId: string, damage: number) => Promise<void>;
     onDamageToSelf?: (damage: number) => Promise<void>;
     onDamageToOpponent?: (opponentUserId: string, damage: number) => Promise<void>;
+    onSummonFollowerToOpponent?: (targetUserId: string, followerId: string) => Promise<void>;
 }
 
 export function GameControls({
@@ -25,7 +26,8 @@ export function GameControls({
     onStartTurn,
     onDamagePlayer,
     onDamageToSelf,
-    onDamageToOpponent
+    onDamageToOpponent,
+    onSummonFollowerToOpponent
 }: GameControlsProps) {
     const activePlayer = getActivePlayer(room);
     const activeUser = activePlayer ? getUserById(activePlayer.userId, mockUsers) : null;
@@ -36,17 +38,7 @@ export function GameControls({
 
     return (
         <div>
-            <h2>ゲーム進行中</h2>
             <div>
-                <p>参加者: {roomPlayers.length}/2</p>
-
-                {/* 現在のターン情報 */}
-                {activeUser && (
-                    <p style={{ fontWeight: 'bold', color: 'blue' }}>
-                        現在のターン: {activeUser.name}
-                    </p>
-                )}
-
                 {/* アクティブプレイヤーのみに表示される操作 */}
                 {isActiveUser ? (
                     <ActivePlayerControls
@@ -61,9 +53,12 @@ export function GameControls({
                     />
                 ) : (
                     <InactivePlayerControls
+                        room={room}
+                        currentUser={currentUser}
                         activePlayer={activePlayer}
                         loading={loading}
                         onForceEndOpponentTurn={onForceEndOpponentTurn}
+                        onSummonFollowerToOpponent={onSummonFollowerToOpponent}
                     />
                 )}
             </div>
@@ -102,61 +97,7 @@ function ActivePlayerControls({
     const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
 
     return (
-        <div style={{ marginTop: '16px' }}>
-            <h3>あなたのターンです</h3>
-
-            {/* HP減少デモボタン */}
-            <div style={{ marginBottom: '12px' }}>
-                <h4>リーダーにダメージ</h4>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    {onDamageToSelf && (
-                        <button onClick={() => onDamageToSelf(1)} disabled={loading}>
-                            自分に1ダメージ
-                        </button>
-                    )}
-                    {opponentPlayer && onDamageToOpponent && (
-                        <button onClick={() => onDamageToOpponent(opponentPlayer.userId, 1)} disabled={loading}>
-                            相手に1ダメージ
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* PP消費デモボタン */}
-            <div style={{ marginBottom: '12px' }}>
-                <h4>アクション（PP消費）</h4>
-                <button
-                    onClick={() => onConsumePP(1)}
-                    disabled={loading || currentPP < 1}
-                    style={{
-                        marginRight: '8px',
-                        opacity: currentPP < 1 ? 0.5 : 1
-                    }}
-                >
-                    PP-1消費 {currentPP < 1 && '(不足)'}
-                </button>
-                <button
-                    onClick={() => onConsumePP(2)}
-                    disabled={loading || currentPP < 2}
-                    style={{
-                        marginRight: '8px',
-                        opacity: currentPP < 2 ? 0.5 : 1
-                    }}
-                >
-                    PP-2消費 {currentPP < 2 && '(不足)'}
-                </button>
-                <button
-                    onClick={() => onConsumePP(3)}
-                    disabled={loading || currentPP < 3}
-                    style={{
-                        opacity: currentPP < 3 ? 0.5 : 1
-                    }}
-                >
-                    PP-3消費 {currentPP < 3 && '(不足)'}
-                </button>
-            </div>
-
-            {/* ターン終了ボタン */}
+        <div >
             <button
                 onClick={onEndTurn}
                 disabled={loading}
@@ -168,16 +109,31 @@ function ActivePlayerControls({
 }
 
 interface InactivePlayerControlsProps {
+    room: MockRoom;
+    currentUser: MockUser;
     activePlayer: MockRoomPlayer | null;
     loading: boolean;
     onForceEndOpponentTurn: () => Promise<void>;
+    onSummonFollowerToOpponent?: (targetUserId: string, followerId: string) => Promise<void>;
 }
 
 function InactivePlayerControls({
+    room,
+    currentUser,
     activePlayer,
     loading,
-    onForceEndOpponentTurn
+    onForceEndOpponentTurn,
+    onSummonFollowerToOpponent
 }: InactivePlayerControlsProps) {
+    // 相手プレイヤーを取得
+    const roomPlayers = getPlayersByRoomId(room.id);
+    const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
+
+    const handleSummonOpponentFollower = async (followerId: string) => {
+        if (!onSummonFollowerToOpponent || !opponentPlayer) return;
+        await onSummonFollowerToOpponent(opponentPlayer.userId, followerId);
+    };
+
     return (
         <div >
             <p>相手のターンです。待機してください。</p>
@@ -193,11 +149,47 @@ function InactivePlayerControls({
                         padding: '6px 12px',
                         border: 'none',
                         borderRadius: '4px',
-                        fontSize: '12px'
+                        fontSize: '12px',
+                        marginRight: '8px'
                     }}
                 >
                     {loading ? '相手ターン終了中...' : '相手ターンを終了ボタンデモ用）'}
                 </button>
+
+                {/* 相手フィールドにフォロワー召喚デモボタン */}
+                {onSummonFollowerToOpponent && opponentPlayer && (
+                    <>
+                        <button
+                            onClick={() => handleSummonOpponentFollower('card1')}
+                            disabled={loading}
+                            style={{
+                                backgroundColor: '#4CAF50',
+                                color: 'white',
+                                padding: '6px 12px',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                marginRight: '8px'
+                            }}
+                        >
+                            {loading ? '召喚中...' : '相手にゴブリン召喚'}
+                        </button>
+                        <button
+                            onClick={() => handleSummonOpponentFollower('card5')}
+                            disabled={loading}
+                            style={{
+                                backgroundColor: '#9C27B0',
+                                color: 'white',
+                                padding: '6px 12px',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px'
+                            }}
+                        >
+                            {loading ? '召喚中...' : '相手にドラゴン召喚'}
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
