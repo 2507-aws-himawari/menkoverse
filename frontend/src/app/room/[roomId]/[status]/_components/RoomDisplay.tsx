@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { currentUserAtom } from '@/lib/atoms';
 import { useState } from 'react';
+import { DeckSelector } from './DeckSelector';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -18,6 +19,11 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const router = useRouter();
     const [currentUser] = useAtom(currentUserAtom);
     const [isStartingGame, setIsStartingGame] = useState(false);
+    const [, forceUpdate] = useState({});
+
+    const refreshData = () => {
+        forceUpdate({});
+    };
 
     const handleBackHome = () => {
         router.push('/home');
@@ -97,6 +103,15 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 <div>
                                     <span>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</span>
                                     <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
+                                    {room.status === 'waiting' && (
+                                        <p>
+                                            デッキ: {player.selectedDeckId ? (
+                                                <span style={{ color: 'green' }}>選択済み</span>
+                                            ) : (
+                                                <span style={{ color: 'orange' }}>未選択</span>
+                                            )}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -123,6 +138,23 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                             {roomPlayers.length < 2 && (
                                 <p>もう1人のプレイヤーを待っています...</p>
                             )}
+
+                            {/* 現在のユーザーのデッキ選択 */}
+                            {(() => {
+                                const currentPlayer = roomPlayers.find(p => p.userId === currentUser.id);
+                                if (currentPlayer) {
+                                    return (
+                                        <DeckSelector
+                                            room={room}
+                                            currentUser={currentUser}
+                                            currentPlayer={currentPlayer}
+                                            onDeckSelected={refreshData}
+                                        />
+                                    );
+                                }
+                                return null;
+                            })()}
+
                             {roomPlayers.length === 2 && room.ownerId === currentUser.id && (
                                 <div>
                                     <p>プレイヤーが揃いました！</p>
