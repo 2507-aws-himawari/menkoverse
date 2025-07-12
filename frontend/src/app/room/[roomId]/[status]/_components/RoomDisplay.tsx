@@ -2,6 +2,7 @@ import { getUserById, getActivePlayer, calculatePPMax } from '@/lib/gameLogic';
 import { GAME_CONSTANTS } from '@/lib/constants';
 import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
 import type { MockRoom, MockRoomPlayer } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -10,7 +11,11 @@ interface RoomDisplayProps {
 export function RoomDisplay({ room }: RoomDisplayProps) {
     // プレイヤー情報を取得
     const roomPlayers = getPlayersByRoomId(room.id);
+    const router = useRouter();
 
+    const handleBackHome = () => {
+        router.push('/home');
+    };
     const Turn = roomPlayers.length > 0 ? Math.max(...roomPlayers.map(p => p.turn)) : 1;
 
     return (
@@ -78,6 +83,34 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
 
                 {room.status === 'finish' && (
                     <div>
+                        <div>
+                            {(() => {
+                                const winnerPlayer = roomPlayers.find(p => p.hp > 0);
+                                const loserPlayer = roomPlayers.find(p => p.hp <= 0);
+                                const winnerUser = winnerPlayer ? getUserById(winnerPlayer.userId, mockUsers) : null;
+                                const loserUser = loserPlayer ? getUserById(loserPlayer.userId, mockUsers) : null;
+
+                                if (winnerUser && loserUser) {
+                                    return (
+                                        <div>
+                                            <div>
+                                                {winnerUser.name} の勝利！
+                                            </div>
+                                            <button onClick={() => handleBackHome()}>
+                                                ホームに戻る
+                                            </button>
+                                        </div>
+
+                                    );
+                                } else {
+                                    return (
+                                        <div>
+                                            ゲームが終了しました
+                                        </div>
+                                    );
+                                }
+                            })()}
+                        </div>
                     </div>
                 )}
             </div >
