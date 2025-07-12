@@ -35,17 +35,15 @@ export function HandDisplay({ room, currentUser, onSummonFollower }: HandDisplay
         setNotification(null);
 
         await onSummonFollower(handCardId);
-        await loadHand(); // 手札を再読み込み
+        await loadHand();
         setSummoning(null);
     };
 
-    // エラーアトムからエラーメッセージを監視
     useEffect(() => {
         if (errorFromAtom) {
-            // ボードが満員の場合やPP不足の場合は通知として表示
             if (errorFromAtom.includes('ボードが満員です') || errorFromAtom.includes('PPが不足しています')) {
                 setNotification(errorFromAtom);
-                setTimeout(() => setNotification(null), 3000); // 3秒後に消去
+                setTimeout(() => setNotification(null), 3000);
             } else {
                 setError(errorFromAtom);
             }
@@ -76,7 +74,6 @@ export function HandDisplay({ room, currentUser, onSummonFollower }: HandDisplay
             loadHand();
         }, 5000);
 
-        // ターン開始イベントリスナーを追加
         const handleTurnStart = () => {
             loadHand();
         };

@@ -8,7 +8,7 @@ import type { MockRoom, MockUser, MockBoardCard } from '@/lib/types';
 interface BoardDisplayProps {
     room: MockRoom;
     currentUser: MockUser;
-    refreshTrigger?: number; // ボードを強制的に更新するためのトリガー
+    refreshTrigger?: number;
 }
 
 export function BoardDisplay({ room, currentUser, refreshTrigger }: BoardDisplayProps) {
@@ -38,7 +38,7 @@ export function BoardDisplay({ room, currentUser, refreshTrigger }: BoardDisplay
         };
 
         loadBoards();
-    }, [room.id, refreshTrigger]); // refreshTriggerを依存配列に追加
+    }, [room.id, refreshTrigger]);
 
     if (loading) {
         return <div>ボードを読み込み中...</div>;

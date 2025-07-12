@@ -17,7 +17,6 @@ interface RoomDisplayProps {
 }
 
 export function RoomDisplay({ room }: RoomDisplayProps) {
-    // プレイヤー情報を取得
     const roomPlayers = getPlayersByRoomId(room.id);
     const router = useRouter();
     const [currentUser] = useAtom(currentUserAtom);
@@ -25,7 +24,6 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const [, forceUpdate] = useState({});
     const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
 
-    // ゲームアクションフック
     const { handleSummonFollower: originalHandleSummonFollower } = useGameActions();
 
     // フォロワー召喚後にボードを更新
