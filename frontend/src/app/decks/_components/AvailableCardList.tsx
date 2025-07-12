@@ -38,7 +38,7 @@ export function AvailableCardList({ deckId, availableCards, onCardAdded, current
   return (
     <div style={{ marginTop: '20px' }}>
       {!canAddCard && (
-        <div style={{ color: 'red', marginBottom: '10px', padding: '10px', border: '1px solid #red', backgroundColor: '#ffe6e6' }}>
+        <div style={{ color: 'red', marginBottom: '10px', padding: '10px', border: '1px solid red', backgroundColor: '#ffe6e6' }}>
           デッキは40枚です。これ以上カードを追加できません。
         </div>
       )}
