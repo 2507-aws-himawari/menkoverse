@@ -246,5 +246,12 @@ export class AppStack extends cdk.Stack {
       exportName: `${this.stackName}-AppRunnerServiceId`,
       value: this.appRunnerService.attrServiceId,
     });
+
+    new cdk.CfnOutput(this, 'CfnOutputVpcConnectorArn', {
+      key: 'VpcConnectorArn',
+      description: 'VPC Connector ARN for App Runner services',
+      exportName: `${this.stackName}-VpcConnectorArn`,
+      value: vpcConnector.attrVpcConnectorArn,
+    });
   }
 }
