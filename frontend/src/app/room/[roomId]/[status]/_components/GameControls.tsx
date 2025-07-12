@@ -104,7 +104,6 @@ function ActivePlayerControls({
     return (
         <div style={{ marginTop: '16px' }}>
             <h3>あなたのターンです</h3>
-
             {/* HP減少デモボタン */}
             <div style={{ marginBottom: '12px' }}>
                 <h4>リーダーにダメージ</h4>
@@ -121,41 +120,6 @@ function ActivePlayerControls({
                     )}
                 </div>
             </div>
-
-            {/* PP消費デモボタン */}
-            <div style={{ marginBottom: '12px' }}>
-                <h4>アクション（PP消費）</h4>
-                <button
-                    onClick={() => onConsumePP(1)}
-                    disabled={loading || currentPP < 1}
-                    style={{
-                        marginRight: '8px',
-                        opacity: currentPP < 1 ? 0.5 : 1
-                    }}
-                >
-                    PP-1消費 {currentPP < 1 && '(不足)'}
-                </button>
-                <button
-                    onClick={() => onConsumePP(2)}
-                    disabled={loading || currentPP < 2}
-                    style={{
-                        marginRight: '8px',
-                        opacity: currentPP < 2 ? 0.5 : 1
-                    }}
-                >
-                    PP-2消費 {currentPP < 2 && '(不足)'}
-                </button>
-                <button
-                    onClick={() => onConsumePP(3)}
-                    disabled={loading || currentPP < 3}
-                    style={{
-                        opacity: currentPP < 3 ? 0.5 : 1
-                    }}
-                >
-                    PP-3消費 {currentPP < 3 && '(不足)'}
-                </button>
-            </div>
-
             {/* ターン終了ボタン */}
             <button
                 onClick={onEndTurn}

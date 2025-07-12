@@ -257,22 +257,20 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 </div>
                             );
                         })}
-
-                        {/* 現在のユーザーの手札を表示 */}
-                        <div style={{ marginTop: '20px' }}>
-                            <HandDisplay
-                                room={room}
-                                currentUser={currentUser}
-                                onSummonFollower={handleSummonFollower}
-                            />
-                        </div>
-
                         {/* バトルフィールド（ボード）を表示 */}
                         <div style={{ marginTop: '20px' }}>
                             <BoardDisplay
                                 room={room}
                                 currentUser={currentUser}
                                 refreshTrigger={boardRefreshTrigger}
+                            />
+                        </div>
+                        {/* 現在のユーザーの手札を表示 */}
+                        <div style={{ marginTop: '20px' }}>
+                            <HandDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                onSummonFollower={handleSummonFollower}
                             />
                         </div>
                     </div>
