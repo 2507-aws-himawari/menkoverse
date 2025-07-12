@@ -1,5 +1,5 @@
 import type { Follower } from '@/types/follower';
-import type { DeckCard } from '@/types/deck';
+import type { DeckCard, RentalDeckCard } from '@/types/deck';
 import { useCardOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
@@ -7,7 +7,7 @@ interface Props {
   availableCards: Follower[];
   onCardAdded: () => void;
   currentCardCount: number;
-  currentDeckCards: DeckCard[];
+  currentDeckCards: (DeckCard | RentalDeckCard)[];
 }
 
 export function AvailableCardList({ deckId, availableCards, onCardAdded, currentCardCount, currentDeckCards }: Props) {

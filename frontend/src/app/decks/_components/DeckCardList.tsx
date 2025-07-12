@@ -1,17 +1,18 @@
-import type { DeckCard, GroupedDeckCard } from '@/types/deck';
+import type { DeckCard, RentalDeckCard, GroupedDeckCard } from '@/types/deck';
 import { useCardOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
   deckId: string;
-  cards: DeckCard[];
+  cards: (DeckCard | RentalDeckCard)[];
   onCardRemoved: () => void;
+  isRental?: boolean;
 }
 
-export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
+export function DeckCardList({ deckId, cards, onCardRemoved, isRental = false }: Props) {
   const { isLoading, error, execute } = useCardOperation();
 
   // カードをグループ化する関数
-  const groupCardsByFollower = (cards: DeckCard[]): GroupedDeckCard[] => {
+  const groupCardsByFollower = (cards: (DeckCard | RentalDeckCard)[]): GroupedDeckCard[] => {
     const grouped = cards.reduce((acc, card) => {
       const key = card.followerId;
       if (!acc[key]) {
@@ -88,15 +89,17 @@ export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
                 )}
               </h3>
               <p>コスト: {groupedCard.follower.cost} | 攻撃力: {groupedCard.follower.attack} | HP: {groupedCard.follower.hp}</p>
-              <button
-                onClick={() => handleRemoveCard(groupedCard)}
-                disabled={groupedCard.cards[0] ? isLoading(groupedCard.cards[0].id) : false}
-                style={{ 
-                  color: 'red',
-                }}
-              >
-                {(groupedCard.cards[0] && isLoading(groupedCard.cards[0].id)) ? '削除中...' : '削除'}
-              </button>
+              {!isRental && (
+                <button
+                  onClick={() => handleRemoveCard(groupedCard)}
+                  disabled={groupedCard.cards[0] ? isLoading(groupedCard.cards[0].id) : false}
+                  style={{ 
+                    color: 'red',
+                  }}
+                >
+                  {(groupedCard.cards[0] && isLoading(groupedCard.cards[0].id)) ? '削除中...' : '削除'}
+                </button>
+              )}
             </div>
           ))}
         </div>
