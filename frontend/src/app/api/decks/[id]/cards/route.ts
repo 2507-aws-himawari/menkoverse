@@ -2,12 +2,13 @@ import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { addCardToDeckSchema } from "@/lib/schema/deck";
 import { type NextRequest, NextResponse } from "next/server";
+import { isRentalDeck } from "@/lib/utils/deckUtils";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
   console.log("Fetching available cards for deck:", id);
 
   try {
@@ -28,7 +29,13 @@ export async function GET(
       },
     });
 
-    if (!deck) {
+    const rentalDeck = await db.rentalDeck.findFirst({
+      where: {
+        id: id,
+      },
+    });
+
+    if (!deck && !rentalDeck) {
       return NextResponse.json(
         { error: "デッキが見つかりません" },
         { status: 404 }
@@ -65,6 +72,14 @@ export async function POST(
       return NextResponse.json(
         { error: "認証が必要です" },
         { status: 401 }
+      );
+    }
+
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(id)) {
+      return NextResponse.json(
+        { error: "レンタルデッキのカードは変更できません" },
+        { status: 403 }
       );
     }
 
@@ -154,6 +169,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: "認証が必要です" },
         { status: 401 }
+      );
+    }
+
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(id)) {
+      return NextResponse.json(
+        { error: "レンタルデッキのカードは変更できません" },
+        { status: 403 }
       );
     }
 

@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { updateDeckSchema } from '@/lib/schema/deck';
 import type { UpdateDeckInput } from '@/types/deck';
 import { useAsyncOperation } from '@/app/decks/_hooks/useDecks';
+import { isRentalDeck } from '@/lib/utils/deckUtils';
+import { DeckBadge } from './DeckBadge';
 
 interface Props {
   deckId: string;
@@ -14,6 +16,7 @@ interface Props {
 export function DeckNameEditor({ deckId, currentName, onDeckUpdated }: Props) {
   const [showForm, setShowForm] = useState(false);
   const { loading, error, execute, clearError } = useAsyncOperation();
+  const isRental = isRentalDeck(deckId);
   
   const {
     register,
@@ -47,6 +50,18 @@ export function DeckNameEditor({ deckId, currentName, onDeckUpdated }: Props) {
       onDeckUpdated();
     }
   };
+
+  // レンタルデッキの場合は編集不可
+  if (isRental) {
+    return (
+      <div>
+        <h2>
+          {currentName}
+          <DeckBadge isRental={true} />
+        </h2>
+      </div>
+    );
+  }
 
   return (
     <div>

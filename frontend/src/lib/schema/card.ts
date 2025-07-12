@@ -9,7 +9,7 @@ export const cardSchema = z.object({
     .max(10, "コストは10以下でなければなりません"),
   attack: z
     .number()
-    .min(1, "攻撃力は1以上でなければなりません")
+    .min(0, "攻撃力は0以上でなければなりません")
     .max(100, "攻撃力は100以下でなければなりません"),
   hp: z
     .number()

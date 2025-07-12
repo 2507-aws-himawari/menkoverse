@@ -10,11 +10,21 @@ export interface Deck {
     name: string | null;
   };
   DeckCards?: DeckCard[];
+  RentalDeckCards?: RentalDeckCard[];
+  isRental?: boolean; // レンタルデッキかどうかを示すフラグ
 }
 
 export interface DeckCard {
   id: string;
-  deckId: string;
+  deckId?: string;
+  rentalDeckId?: string;
+  followerId: string;
+  follower: Follower
+}
+
+export interface RentalDeckCard {
+  id: string;
+  rentalDeckId: string;
   followerId: string;
   follower: Follower
 }
@@ -26,7 +36,7 @@ export interface DeckWithCards extends Deck {
 // カードのグループ化用の型
 export interface GroupedDeckCard {
   follower: Follower;
-  cards: DeckCard[];
+  cards: (DeckCard | RentalDeckCard)[];
   count: number;
 }
 

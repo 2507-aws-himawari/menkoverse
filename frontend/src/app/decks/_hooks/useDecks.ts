@@ -2,6 +2,7 @@ import useSWR from 'swr';
 import { useState } from 'react';
 import type { DeckWithCards, CreateDeckInput, UpdateDeckInput } from '@/types/deck';
 import type { Follower } from '@/types/follower';
+import { isRentalDeck } from '@/lib/utils/deckUtils';
 
 const fetcher = async (url: string) => {
   const response = await fetch(url);
@@ -35,6 +36,11 @@ export function useDecks() {
   };
 
   const deleteDeck = async (deckId: string): Promise<void> => {
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(deckId)) {
+      throw new Error('レンタルデッキは削除できません');
+    }
+
     const response = await fetch(`/api/decks/${deckId}`, {
       method: 'DELETE',
     });
@@ -65,6 +71,11 @@ export function useDeck(deckId: string | null) {
   const updateDeck = async (input: UpdateDeckInput): Promise<DeckWithCards> => {
     if (!deckId) throw new Error('デッキIDが必要です');
 
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(deckId)) {
+      throw new Error('レンタルデッキは変更できません');
+    }
+
     const response = await fetch(`/api/decks/${deckId}`, {
       method: 'PUT',
       headers: {
@@ -85,6 +96,11 @@ export function useDeck(deckId: string | null) {
   const addCard = async (followerId: string): Promise<void> => {
     if (!deckId) throw new Error('デッキIDが必要です');
 
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(deckId)) {
+      throw new Error('レンタルデッキのカードは変更できません');
+    }
+
     const response = await fetch(`/api/decks/${deckId}/cards`, {
       method: 'POST',
       headers: {
@@ -102,6 +118,11 @@ export function useDeck(deckId: string | null) {
 
   const removeCard = async (deckCardId: string): Promise<void> => {
     if (!deckId) throw new Error('デッキIDが必要です');
+
+    // レンタルデッキの場合は操作を禁止
+    if (isRentalDeck(deckId)) {
+      throw new Error('レンタルデッキのカードは変更できません');
+    }
 
     const response = await fetch(`/api/decks/${deckId}/cards?deckCardId=${deckCardId}`, {
       method: 'DELETE',
