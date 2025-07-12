@@ -8,6 +8,7 @@ import { useAtom } from 'jotai';
 import { currentUserAtom } from '@/lib/atoms';
 import { useState } from 'react';
 import { DeckSelector } from './DeckSelector';
+import { HandDisplay } from './HandDisplay';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -224,14 +225,14 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
 
                 {room.status === 'playing' && (
                     <div>
-                        <h4 >
+                        <h4>
                             [DEBUG] デッキ選択状況
                         </h4>
                         {roomPlayers.map((player, index) => {
                             const user = getUserById(player.userId, mockUsers);
                             const selectedDeck = player.selectedDeckId ? getDeckById(player.selectedDeckId) : null;
                             return (
-                                <div key={player.id} >
+                                <div key={player.id}>
                                     <strong>{user?.name}</strong>: {' '}
                                     {selectedDeck ? (
                                         <span style={{ color: '#28a745' }}>
@@ -243,6 +244,11 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 </div>
                             );
                         })}
+
+                        {/* 現在のユーザーの手札を表示 */}
+                        <div style={{ marginTop: '20px' }}>
+                            <HandDisplay room={room} currentUser={currentUser} />
+                        </div>
                     </div>
                 )}
 
