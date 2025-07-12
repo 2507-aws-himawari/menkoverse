@@ -1,19 +1,21 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { fromIni } from '@aws-sdk/credential-providers';
-import type { CreateRoomRequest, CreateRoomResponse } from '@/types/game';
-import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
+import type { CreateRoomRequest, JoinRoomRequest, CreateRoomResponse, JoinRoomResponse } from '@/types/game';
+import { checkAWSAvailability, mockRooms, addMockRoom, updateMockRoom, getMockRoom } from './mock-data';
 
 // DynamoDB client configuration
+// Use AWS profile if specified, otherwise use default credential chain
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'ap-northeast-1',
   credentials: process.env.AWS_PROFILE 
     ? fromIni({ profile: process.env.AWS_PROFILE })
-    : undefined,
+    : undefined, // Use default credential chain
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
 
+// Get table name from environment
 const getTableName = () => {
   const tableName = process.env.DYNAMODB_TABLE_NAME;
   if (!tableName) {
@@ -27,11 +29,14 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
   const roomId = request.roomName; // あいことばをIDとして使用
   const timestamp = Date.now();
 
+  // Check if AWS is available
   const awsAvailable = await checkAWSAvailability();
   if (!awsAvailable) {
     console.log('AWS not available, simulating room creation');
+    // Add to mock data for this session
     const newRoom = {
       id: roomId,
+      name: request.roomName,
       ownerId: request.ownerId,
       status: 'waiting',
       currentUserId: null,
@@ -44,6 +49,7 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
   }
 
   try {
+    // Room metadata only (no player creation)
     await docClient.send(new PutCommand({
       TableName: getTableName(),
       Item: {
@@ -65,8 +71,11 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
   }
 }
 
+export { mockRooms };
+
 // 部屋一覧取得（最小限実装）
 export async function listRooms() {
+  // Check if AWS is available
   const awsAvailable = await checkAWSAvailability();
   if (!awsAvailable) {
     console.log('AWS not available, returning mock data');
@@ -199,4 +208,46 @@ export async function updateRoomStatus(roomId: string, status: 'waiting' | 'play
   }
 }
 
-export { mockRooms };
+// プレイヤー取得（詳細画面用）
+export async function getRoomPlayers(roomId: string) {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, using mock players');
+    // Mock players for development
+    return [
+      {
+        playerId: 'player1',
+        playerName: 'Player 1',
+        isOwner: true,
+        joinedAt: new Date().toISOString(),
+      },
+      {
+        playerId: 'player2',
+        playerName: 'Player 2',
+        isOwner: false,
+        joinedAt: new Date().toISOString(),
+      },
+    ];
+  }
+
+  try {
+    const response = await docClient.send(new QueryCommand({
+      TableName: getTableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: {
+        ':pk': `ROOM#${roomId}`,
+        ':sk': 'PLAYER#',
+      },
+    }));
+
+    return (response.Items || []).map(item => ({
+      playerId: item.userId,
+      playerName: item.playerName || `Player ${item.userId}`,
+      isOwner: item.isOwner || false,
+      joinedAt: item.createdAt,
+    }));
+  } catch (error) {
+    console.error('Error getting room players:', error);
+    return [];
+  }
+}

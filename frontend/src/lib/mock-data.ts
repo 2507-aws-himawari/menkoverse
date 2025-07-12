@@ -6,34 +6,28 @@ import { fromIni } from '@aws-sdk/credential-providers';
 let mockRooms = [
   {
     id: 'room_mock_1',
-    name: '🎮 テストルーム1',
-    playerCount: 2,
-    maxPlayers: 4,
+    ownerId: 'admin',
     status: 'waiting',
-    ownerId: 'player_mock_owner1',
-    description: 'テスト用のルームです',
+    currentUserId: null,
+    turn: 0,
     createdAt: Date.now() - 300000, // 5分前
     updatedAt: Date.now() - 60000,  // 1分前
   },
   {
     id: 'room_mock_2',
-    name: '🚀 テストルーム2',
-    playerCount: 1,
-    maxPlayers: 2,
+    ownerId: 'admin',
     status: 'waiting',
-    ownerId: 'player_mock_owner2',
-    description: '2人対戦用',
+    currentUserId: null,
+    turn: 0,
     createdAt: Date.now() - 600000, // 10分前
     updatedAt: Date.now() - 300000, // 5分前
   },
   {
     id: 'room_mock_3',
-    name: '⚡ 高速バトル',
-    playerCount: 3,
-    maxPlayers: 4,
-    status: 'waiting',
-    ownerId: 'player_mock_owner3',
-    description: '高速プレイ推奨',
+    ownerId: 'admin',
+    status: 'playing',
+    currentUserId: 'player1',
+    turn: 3,
     createdAt: Date.now() - 120000, // 2分前
     updatedAt: Date.now() - 30000,  // 30秒前
   },

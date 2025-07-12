@@ -5,9 +5,9 @@ import { createRoom, listRooms } from '@/lib/dynamodb-client';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { roomName, ownerId, maxPlayers, description } = body;
+    const { roomName, ownerId } = body;
 
-    console.log('Room creation request:', { roomName, ownerId, maxPlayers, description });
+    console.log('Room creation request:', { roomName, ownerId });
 
     if (!roomName || !ownerId) {
       return NextResponse.json(
@@ -19,8 +19,6 @@ export async function POST(request: NextRequest) {
     const result = await createRoom({
       roomName,
       ownerId,
-      maxPlayers: maxPlayers || 4,
-      description,
     });
 
     console.log('Room created successfully:', result);

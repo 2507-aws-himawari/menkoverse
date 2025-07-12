@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRoomById, getRoomPlayers } from '@/lib/dynamodb-client';
+import { getRoomById } from '@/lib/dynamodb-client';
 
 // GET /api/rooms/[id] - 個別ルーム取得
 export async function GET(
@@ -27,16 +27,8 @@ export async function GET(
       );
     }
 
-    // Get players for this room
-    const players = await getRoomPlayers(roomId);
-    
-    const response = {
-      ...room,
-      players,
-    };
-
-    console.log('Room fetched successfully:', response);
-    return NextResponse.json(response);
+    console.log('Room fetched successfully:', room);
+    return NextResponse.json(room);
   } catch (error) {
     console.error('Room fetch error:', error);
     return NextResponse.json(

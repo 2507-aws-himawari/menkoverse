@@ -58,6 +58,7 @@ export default function RoomDetailPage() {
       });
       
       if (response.ok) {
+        // ルーム情報を再取得
         const updatedRoom = await response.json();
         setRoom(updatedRoom);
       } else {
@@ -165,14 +166,14 @@ export default function RoomDetailPage() {
   };
 
   return (
-    <AdminLayout title={`ルーム詳細: ${room.id}`}>
+    <AdminLayout title={`ルーム詳細: ${room.roomName}`}>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* ルーム情報 */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{room.id}</h2>
-              <p className="text-gray-600">あいことば</p>
+              <h2 className="text-2xl font-bold text-gray-900">{room.roomName}</h2>
+              <p className="text-gray-600">Room ID: {room.roomId}</p>
             </div>
             <div className="flex items-center gap-2">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(room.status)}`}>
@@ -189,21 +190,57 @@ export default function RoomDetailPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-600">オーナー</p>
-              <p className="text-lg font-semibold">{room.ownerId}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">ターン数</p>
-              <p className="text-lg font-semibold">{room.turn}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">現在のプレイヤー</p>
-              <p className="text-lg font-semibold">{room.currentUserId || '未設定'}</p>
+              <p className="text-sm text-gray-600">プレイヤー数</p>
+              <p className="text-lg font-semibold">{room.players.length}/{room.maxPlayers}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">作成日時</p>
               <p className="text-lg font-semibold">{new Date(room.createdAt).toLocaleString('ja-JP')}</p>
             </div>
+          </div>
+          
+          {room.description && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-600">説明</p>
+              <p className="mt-1">{room.description}</p>
+            </div>
+          )}
+        </div>
+
+        {/* プレイヤー一覧 */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">参加プレイヤー</h3>
+          <div className="space-y-3">
+            {room.players.map((player) => (
+              <div key={player.playerId} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                    {player.playerName.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium">{player.playerName}</p>
+                    <p className="text-sm text-gray-600">
+                      {player.isOwner ? 'オーナー' : 'プレイヤー'} • {new Date(player.joinedAt).toLocaleString('ja-JP')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* 空きスロット */}
+            {Array.from({ length: room.maxPlayers - room.players.length }, (_, i) => (
+              <div key={`empty-${i}`} className="flex items-center justify-between py-2 px-3 bg-gray-100 rounded-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600">
+                    ?
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-500">空きスロット</p>
+                    <p className="text-sm text-gray-400">参加者を待機中</p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -211,7 +248,7 @@ export default function RoomDetailPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">ルーム操作</h3>
           <div className="flex gap-4">
-            {room.status === 'waiting' && (
+            {room.status === 'waiting' && room.players.length >= 2 && (
               <button
                 onClick={handleStartGame}
                 className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition-colors"
