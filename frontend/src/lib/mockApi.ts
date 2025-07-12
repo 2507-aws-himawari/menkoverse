@@ -16,7 +16,10 @@ import {
     getHandsByRoomPlayerId,
     updateMockRoomPlayers,
     updateMockHands,
-    getFollowerById
+    getFollowerById,
+    getBoardByRoomPlayerId,
+    updateMockBoard,
+    mockBoard
 } from './mockData';
 import type {
     MockUser,
@@ -26,6 +29,7 @@ import type {
     MockDeckCard,
     MockHand,
     MockFollower,
+    MockBoardCard,
     CreateRoomInput,
     JoinRoomInput,
     GetRoomInput,
@@ -39,7 +43,8 @@ import type {
     ForceEndOpponentTurnInput,
     DamagePlayerInput,
     DrawCardsInput,
-    GetHandInput
+    GetHandInput,
+    SummonFollowerInput
 } from './types';
 
 export const mockApi = {
@@ -579,5 +584,59 @@ export const mockApi = {
 
         const hands = getHandsByRoomPlayerId(player.id);
         return hands;
+    },
+
+    // フォロワーを召喚
+    summonFollower: async (input: SummonFollowerInput): Promise<MockBoardCard> => {
+        const room = getRoomById(input.roomId);
+        if (!room) throw new Error('ルームが見つかりません');
+
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!player) throw new Error('プレイヤーが見つかりません');
+
+        // アクティブプレイヤーかチェック
+        const activePlayer = getActivePlayer(room);
+        if (!activePlayer || activePlayer.userId !== input.currentUser.id) {
+            throw new Error('あなたのターンではありません');
+        }
+
+        // 手札から該当カードを取得
+        const handCard = mockHands.find(hand => hand.id === input.handCardId && hand.roomPlayerId === player.id);
+        if (!handCard) throw new Error('指定された手札カードが見つかりません');
+
+        // PP不足チェック
+        if (player.pp < handCard.cost) {
+            throw new Error(`PPが不足しています（必要: ${handCard.cost}, 現在: ${player.pp}）`);
+        }
+
+        // ボードの空きスペースをチェック
+        const currentBoardCards = getBoardByRoomPlayerId(player.id);
+        if (currentBoardCards.length >= 5) {
+            throw new Error('ボードが満員です');
+        }
+
+        // PP消費
+        player.pp -= handCard.cost;
+
+        // ボードにカードを追加
+        const boardCard: MockBoardCard = {
+            id: `board_${player.id}_${Date.now()}`,
+            roomPlayerId: player.id,
+            cardId: handCard.cardId,
+            cost: handCard.cost,
+            attack: handCard.attack,
+            hp: handCard.hp,
+            position: currentBoardCards.length
+        };
+
+        mockBoard.push(boardCard);
+
+        // 手札からカードを削除
+        const handIndex = mockHands.findIndex(hand => hand.id === input.handCardId);
+        if (handIndex !== -1) {
+            mockHands.splice(handIndex, 1);
+        }
+
+        return boardCard;
     },
 };

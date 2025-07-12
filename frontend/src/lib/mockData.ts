@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import type { MockUser, MockRoom, MockRoomPlayer, MockDeck, MockDeckCard, MockHand, MockFollower } from './types';
+import type { MockUser, MockRoom, MockRoomPlayer, MockDeck, MockDeckCard, MockHand, MockFollower, MockBoardCard } from './types';
 
 // ユーザー
 export const mockUsers: MockUser[] = [
@@ -140,7 +140,12 @@ export let mockDeckCards: MockDeckCard[] = [
 
 // 手札（プレイヤーが現在持っているカード）
 export let mockHands: MockHand[] = [
-    // 現在は空 - ドロー処理で追加される
+
+];
+
+// ボード（場に出ているフォロワー）
+export let mockBoard: MockBoardCard[] = [
+
 ];
 
 // フォロワー（カードの基本情報）
@@ -200,6 +205,16 @@ export const getHandsByRoomPlayerId = (roomPlayerId: string): MockHand[] => {
 // 手札を更新する関数
 export const updateMockHands = (newHands: MockHand[]) => {
     mockHands = newHands;
+};
+
+// プレイヤーのボードを取得する関数
+export const getBoardByRoomPlayerId = (roomPlayerId: string): MockBoardCard[] => {
+    return mockBoard.filter(board => board.roomPlayerId === roomPlayerId);
+};
+
+// ボードを更新する関数
+export const updateMockBoard = (newBoard: MockBoardCard[]) => {
+    mockBoard = newBoard;
 };
 
 // フォロワーIDでフォロワー情報を取得する関数
