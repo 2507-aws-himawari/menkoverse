@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import type { MockUser, MockRoom, MockRoomPlayer } from './types';
+import type { MockUser, MockRoom, MockRoomPlayer, MockDeck } from './types';
 
 // ユーザー
 export const mockUsers: MockUser[] = [
@@ -32,6 +32,7 @@ export let mockRoomPlayers: MockRoomPlayer[] = [
         pp: 1,
         turn: 1,
         turnStatus: 'active',
+        selectedDeckId: 'deck3'
     },
     {
         id: 'player2',
@@ -41,6 +42,7 @@ export let mockRoomPlayers: MockRoomPlayer[] = [
         pp: 1,
         turn: 1,
         turnStatus: 'active',
+        selectedDeckId: 'undefined',
     },
     {
         id: 'player3',
@@ -50,6 +52,36 @@ export let mockRoomPlayers: MockRoomPlayer[] = [
         pp: 0,
         turn: 1,
         turnStatus: 'ended',
+        selectedDeckId: 'deck1',
+    },
+];
+
+// デッキ
+export let mockDecks: MockDeck[] = [
+    {
+        id: 'deck1',
+        name: '攻撃型デッキ',
+        userId: 'user1',
+    },
+    {
+        id: 'deck2',
+        name: '防御型デッキ',
+        userId: 'user1',
+    },
+    {
+        id: 'deck3',
+        name: 'バランス型デッキ',
+        userId: 'user2',
+    },
+    {
+        id: 'deck4',
+        name: '実験デッキ',
+        userId: 'user2',
+    },
+    {
+        id: 'deck5',
+        name: 'コントロールデッキ',
+        userId: 'user3',
     },
 ];
 
@@ -71,4 +103,14 @@ export const getPlayersByRoomId = (roomId: string): MockRoomPlayer[] => {
 // 特定のプレイヤーを取得する関数
 export const getPlayerByUserIdAndRoomId = (userId: string, roomId: string): MockRoomPlayer | undefined => {
     return mockRoomPlayers.find(p => p.userId === userId && p.roomId === roomId);
+};
+
+// ユーザーのデッキを取得する関数
+export const getDecksByUserId = (userId: string): MockDeck[] => {
+    return mockDecks.filter(deck => deck.userId === userId);
+};
+
+// デッキIDでデッキを取得する関数
+export const getDeckById = (deckId: string): MockDeck | undefined => {
+    return mockDecks.find(deck => deck.id === deckId);
 };

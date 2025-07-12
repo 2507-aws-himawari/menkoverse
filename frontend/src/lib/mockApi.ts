@@ -4,19 +4,25 @@ import {
     mockUsers,
     mockRooms,
     mockRoomPlayers,
+    mockDecks,
     getRoomById,
     getPlayersByRoomId,
     getPlayerByUserIdAndRoomId,
+    getDecksByUserId,
+    getDeckById,
     updateMockRoomPlayers
 } from './mockData';
 import type {
     MockUser,
     MockRoom,
     MockRoomPlayer,
+    MockDeck,
     CreateRoomInput,
     JoinRoomInput,
     GetRoomInput,
     StartGameInput,
+    SelectDeckInput,
+    GetDecksInput,
     UpdatePlayerStatusInput,
     StartTurnInput,
     EndTurnInput,
@@ -44,6 +50,7 @@ export const mockApi = {
             pp: 1,
             turn: 1,
             turnStatus: 'ended',
+            selectedDeckId: undefined,
         };
         mockRoomPlayers.push(newPlayer);
 
@@ -82,6 +89,7 @@ export const mockApi = {
             pp: 1,
             turn: 1,
             turnStatus: 'ended',
+            selectedDeckId: undefined,
         };
 
         mockRoomPlayers.push(newPlayer);
@@ -123,6 +131,12 @@ export const mockApi = {
             throw new Error('プレイヤーが2人揃っていません');
         }
 
+        // 両プレイヤーがデッキを選択しているかチェック
+        const playersWithoutDeck = roomPlayers.filter(player => !player.selectedDeckId);
+        if (playersWithoutDeck.length > 0) {
+            throw new Error('すべてのプレイヤーがデッキを選択してください');
+        }
+
         // ゲーム開始
         console.log(`Starting game for room ${input.roomId}, changing status from ${room.status} to playing`);
         room.status = 'playing';
@@ -145,6 +159,37 @@ export const mockApi = {
 
         console.log(`Game started successfully. Room status: ${room.status}`);
         return room;
+    },
+
+    // デッキ選択
+    selectDeck: async (input: SelectDeckInput): Promise<MockRoomPlayer | null> => {
+        const room = getRoomById(input.roomId);
+        if (!room) {
+            throw new Error('部屋が見つかりません');
+        }
+
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!player) {
+            throw new Error('プレイヤーが見つかりません');
+        }
+
+        // ゲーム開始前のみデッキ選択可能
+        if (room.status !== 'waiting') {
+            throw new Error('ゲーム開始後はデッキを変更できません');
+        }
+
+        // デッキIDを設定
+        player.selectedDeckId = input.deckId;
+        console.log(`Player ${input.currentUser.name} selected deck ${input.deckId}`);
+
+        return player;
+    },
+
+    // ユーザーのデッキ一覧を取得
+    getDecks: async (input: GetDecksInput): Promise<MockDeck[]> => {
+        const userDecks = getDecksByUserId(input.currentUser.id);
+        console.log(`Getting decks for user ${input.currentUser.name}:`, userDecks);
+        return userDecks;
     },
 
     // プレイヤーの状態を更新
