@@ -5,18 +5,27 @@ import {
     mockRooms,
     mockRoomPlayers,
     mockDecks,
+    mockDeckCards,
+    mockHands,
     getRoomById,
     getPlayersByRoomId,
     getPlayerByUserIdAndRoomId,
     getDecksByUserId,
     getDeckById,
-    updateMockRoomPlayers
+    getDeckCardsByDeckId,
+    getHandsByRoomPlayerId,
+    updateMockRoomPlayers,
+    updateMockHands,
+    getFollowerById
 } from './mockData';
 import type {
     MockUser,
     MockRoom,
     MockRoomPlayer,
     MockDeck,
+    MockDeckCard,
+    MockHand,
+    MockFollower,
     CreateRoomInput,
     JoinRoomInput,
     GetRoomInput,
@@ -28,7 +37,9 @@ import type {
     EndTurnInput,
     ConsumePPInput,
     ForceEndOpponentTurnInput,
-    DamagePlayerInput
+    DamagePlayerInput,
+    DrawCardsInput,
+    GetHandInput
 } from './types';
 
 export const mockApi = {
@@ -158,6 +169,24 @@ export const mockApi = {
         }
 
         console.log(`Game started successfully. Room status: ${room.status}`);
+
+        // 両プレイヤーに初期手札をドロー
+        for (const player of roomPlayers) {
+            const user = mockUsers.find(u => u.id === player.userId);
+            if (user) {
+                try {
+                    await mockApi.drawCards({
+                        roomId: input.roomId,
+                        currentUser: user,
+                        count: 5
+                    });
+                    console.log(`Initial hand drawn for player ${user.name}`);
+                } catch (error) {
+                    console.error(`Failed to draw initial hand for player ${user.name}:`, error);
+                }
+            }
+        }
+
         return room;
     },
 
@@ -329,5 +358,63 @@ export const mockApi = {
         }
 
         return targetPlayer;
+    },
+
+    drawCards: async (input: DrawCardsInput): Promise<MockHand[]> => {
+        const room = getRoomById(input.roomId);
+        if (!room) throw new Error('ルームが見つかりません');
+
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!player) throw new Error('プレイヤーが見つかりません');
+
+        if (!player.selectedDeckId) throw new Error('デッキが選択されていません');
+
+        const count = input.count || 5;
+
+        console.log(`Getting deck cards for deckId: ${player.selectedDeckId}`);
+        const deckCards = getDeckCardsByDeckId(player.selectedDeckId);
+        console.log(`Found ${deckCards.length} cards in deck ${player.selectedDeckId}:`, deckCards);
+
+        if (deckCards.length === 0) {
+            throw new Error(`デッキ「${player.selectedDeckId}」にカードがありません。デッキのカード構成を確認してください。`);
+        }
+
+        // ランダムに指定枚数のカードを選択
+        const shuffledCards = [...deckCards].sort(() => Math.random() - 0.5);
+        const selectedCards = shuffledCards.slice(0, count);
+
+        // 手札に追加するカードを生成
+        const newHandCards: MockHand[] = selectedCards.map((deckCard, index) => {
+            const follower = getFollowerById(deckCard.followerId);
+            if (!follower) {
+                throw new Error(`フォロワー「${deckCard.followerId}」が見つかりません`);
+            }
+            return {
+                id: `hand_${player.id}_${Date.now()}_${index}`,
+                roomPlayerId: player.id,
+                cardId: deckCard.followerId,
+                cost: follower.cost,
+                attack: follower.attack,
+                hp: follower.hp,
+            };
+        });
+
+        // 既存の手札と合わせて更新
+        const currentHands = getHandsByRoomPlayerId(player.id);
+        const updatedHands = [...mockHands.filter(hand => hand.roomPlayerId !== player.id), ...currentHands, ...newHandCards];
+        updateMockHands(updatedHands);
+
+        console.log(`Player ${input.currentUser.name} drew ${count} cards from deck ${player.selectedDeckId}`);
+        return newHandCards;
+    },
+
+    // プレイヤーの手札を取得
+    getHand: async (input: GetHandInput): Promise<MockHand[]> => {
+        const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
+        if (!player) throw new Error('プレイヤーが見つかりません');
+
+        const hands = getHandsByRoomPlayerId(player.id);
+        console.log(`Getting hand for player ${input.currentUser.name}:`, hands);
+        return hands;
     },
 };
