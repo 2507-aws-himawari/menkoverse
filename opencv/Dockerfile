@@ -2,6 +2,7 @@ FROM python:3.12-slim
 
 # Install system dependencies for OpenCV
 RUN apt-get update && apt-get install -y \
+    libopencv-dev \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -21,7 +22,7 @@ WORKDIR /app
 RUN uv sync --frozen --no-cache
 
 # Expose port
-EXPOSE 80
+EXPOSE 5000
 
 # Run the application.
-CMD ["/app/.venv/bin/python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["/app/.venv/bin/python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5000"]

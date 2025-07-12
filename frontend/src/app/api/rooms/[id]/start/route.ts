@@ -4,10 +4,10 @@ import { updateRoomStatus } from '@/lib/dynamodb-client';
 // POST /api/rooms/[id]/start - ゲーム開始
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const roomId = params.id;
+    const { id: roomId } = await params;
     
     if (!roomId) {
       return NextResponse.json(
