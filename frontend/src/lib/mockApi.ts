@@ -586,6 +586,12 @@ export const mockApi = {
         return hands;
     },
 
+    // プレイヤーのボードを取得
+    getBoard: async (input: { roomPlayerId: string }): Promise<MockBoardCard[]> => {
+        const boards = getBoardByRoomPlayerId(input.roomPlayerId);
+        return boards;
+    },
+
     // フォロワーを召喚
     summonFollower: async (input: SummonFollowerInput): Promise<MockBoardCard> => {
         const room = getRoomById(input.roomId);

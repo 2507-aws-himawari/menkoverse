@@ -74,6 +74,12 @@ export function useGameActions() {
         });
     };
 
+    const handleSummonFollower = async (handCardId: string) => {
+        await handleWithLoading(async () => {
+            await gameActions.handleSummonFollower(currentUser, handCardId);
+        });
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -82,5 +88,6 @@ export function useGameActions() {
         handleDamagePlayer,
         handleDamageToSelf,
         handleDamageToOpponent,
+        handleSummonFollower,
     };
 }

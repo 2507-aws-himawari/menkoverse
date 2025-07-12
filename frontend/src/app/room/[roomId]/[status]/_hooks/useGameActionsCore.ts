@@ -95,6 +95,22 @@ export function useGameActionsCore(roomId: string | null) {
         await handleDamagePlayer(currentUser, opponentUserId, damage);
     };
 
+    // フォロワーを召喚
+    const handleSummonFollower = async (currentUser: MockUser, handCardId: string): Promise<void> => {
+        if (!roomId) return;
+
+        try {
+            await mockApi.summonFollower({
+                roomId,
+                currentUser,
+                handCardId
+            });
+            await updateRoomCache(roomId);
+        } catch (error) {
+            throw error;
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -103,5 +119,6 @@ export function useGameActionsCore(roomId: string | null) {
         handleDamagePlayer,
         handleDamageToSelf,
         handleDamageToOpponent,
+        handleSummonFollower,
     };
 }

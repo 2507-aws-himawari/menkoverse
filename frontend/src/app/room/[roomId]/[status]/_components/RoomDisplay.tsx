@@ -9,6 +9,8 @@ import { currentUserAtom } from '@/lib/atoms';
 import { useState } from 'react';
 import { DeckSelector } from './DeckSelector';
 import { HandDisplay } from './HandDisplay';
+import { BoardDisplay } from './BoardDisplay';
+import { useGameActions } from '../_hooks/useGameActions';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -21,6 +23,17 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const [currentUser] = useAtom(currentUserAtom);
     const [isStartingGame, setIsStartingGame] = useState(false);
     const [, forceUpdate] = useState({});
+    const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
+
+    // ゲームアクションフック
+    const { handleSummonFollower: originalHandleSummonFollower } = useGameActions();
+
+    // フォロワー召喚後にボードを更新
+    const handleSummonFollower = async (handCardId: string) => {
+        await originalHandleSummonFollower(handCardId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
 
     const refreshData = () => {
         forceUpdate({});
@@ -247,7 +260,20 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
 
                         {/* 現在のユーザーの手札を表示 */}
                         <div style={{ marginTop: '20px' }}>
-                            <HandDisplay room={room} currentUser={currentUser} />
+                            <HandDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                onSummonFollower={handleSummonFollower}
+                            />
+                        </div>
+
+                        {/* バトルフィールド（ボード）を表示 */}
+                        <div style={{ marginTop: '20px' }}>
+                            <BoardDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                refreshTrigger={boardRefreshTrigger}
+                            />
                         </div>
                     </div>
                 )}
