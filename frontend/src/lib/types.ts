@@ -4,6 +4,12 @@ export interface MockUser {
     isAdmin: boolean;
 }
 
+export interface MockDeck {
+    id: string;
+    name: string;
+    userId: string;
+}
+
 export interface MockRoomPlayer {
     id: string;
     roomId: string;
@@ -12,6 +18,7 @@ export interface MockRoomPlayer {
     pp: number;
     turn: number;
     turnStatus: 'active' | 'ended';
+    selectedDeckId?: string;
 }
 
 export interface MockRoom {
@@ -33,6 +40,23 @@ export interface JoinRoomInput {
 
 export interface GetRoomInput {
     roomId: string;
+}
+
+export interface StartGameInput {
+    roomId: string;
+    currentUser: MockUser;
+    // デモ用フラグ
+    isDemo?: boolean;
+}
+
+export interface SelectDeckInput {
+    roomId: string;
+    currentUser: MockUser;
+    deckId: string;
+}
+
+export interface GetDecksInput {
+    currentUser: MockUser;
 }
 
 export interface UpdatePlayerStatusInput {
