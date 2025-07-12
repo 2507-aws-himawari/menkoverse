@@ -11,6 +11,7 @@ let mockRooms = [
     maxPlayers: 4,
     status: 'waiting',
     ownerId: 'player_mock_owner1',
+    description: 'テスト用のルームです',
     createdAt: Date.now() - 300000, // 5分前
     updatedAt: Date.now() - 60000,  // 1分前
   },
@@ -21,6 +22,7 @@ let mockRooms = [
     maxPlayers: 2,
     status: 'waiting',
     ownerId: 'player_mock_owner2',
+    description: '2人対戦用',
     createdAt: Date.now() - 600000, // 10分前
     updatedAt: Date.now() - 300000, // 5分前
   },
@@ -31,6 +33,7 @@ let mockRooms = [
     maxPlayers: 4,
     status: 'waiting',
     ownerId: 'player_mock_owner3',
+    description: '高速プレイ推奨',
     createdAt: Date.now() - 120000, // 2分前
     updatedAt: Date.now() - 30000,  // 30秒前
   },

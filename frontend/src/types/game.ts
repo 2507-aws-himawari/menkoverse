@@ -125,6 +125,7 @@ export interface CreateRoomRequest {
   roomName: string;
   ownerId: string;
   maxPlayers?: number;
+  description?: string;
 }
 
 export interface CreateRoomResponse {

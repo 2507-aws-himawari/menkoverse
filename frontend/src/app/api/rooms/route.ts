@@ -5,13 +5,13 @@ import { createRoom, listRooms } from '@/lib/dynamodb-client';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { roomName, ownerId, maxPlayers } = body;
+    const { roomName, ownerId, maxPlayers, description } = body;
 
-    console.log('Room creation request:', { roomName, ownerId, maxPlayers });
+    console.log('Room creation request:', { roomName, ownerId, maxPlayers, description });
 
     if (!roomName || !ownerId) {
       return NextResponse.json(
-        { error: 'roomName and ownerId are required' },
+        { error: 'roomName と ownerId は必須です' },
         { status: 400 }
       );
     }
@@ -20,14 +20,23 @@ export async function POST(request: NextRequest) {
       roomName,
       ownerId,
       maxPlayers: maxPlayers || 4,
+      description,
     });
 
     console.log('Room created successfully:', result);
     return NextResponse.json(result, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Room creation error:', error);
+    
+    if (error.message?.includes('already exists')) {
+      return NextResponse.json(
+        { error: 'このあいことばは既に使用されています' },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create room' },
+      { error: 'ルームの作成に失敗しました' },
       { status: 500 }
     );
   }
@@ -39,11 +48,11 @@ export async function GET() {
     console.log('Fetching rooms list...');
     const rooms = await listRooms();
     console.log('Rooms fetched:', rooms.length);
-    return NextResponse.json({ rooms });
+    return NextResponse.json(rooms);
   } catch (error) {
     console.error('Room list error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch rooms' },
+      { error: 'ルーム一覧の取得に失敗しました' },
       { status: 500 }
     );
   }

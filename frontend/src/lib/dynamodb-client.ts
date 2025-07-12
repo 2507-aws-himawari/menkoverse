@@ -41,6 +41,7 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
       maxPlayers: request.maxPlayers || 4,
       status: 'waiting',
       ownerId: request.ownerId,
+      description: request.description || undefined,
       createdAt: timestamp,
       updatedAt: timestamp,
     };
@@ -62,6 +63,7 @@ export async function createRoom(request: CreateRoomRequest): Promise<CreateRoom
         ownerId: request.ownerId,
         playerCount: 1,
         maxPlayers: request.maxPlayers || 4,
+        description: request.description,
         createdAt: timestamp,
         updatedAt: timestamp,
       },
@@ -262,8 +264,132 @@ export async function getRoom(roomId: string) {
   }
 }
 
-// 部屋のプレイヤー一覧取得
+// 個別ルーム取得（詳細画面用）
+export async function getRoomById(roomId: string) {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, using mock data');
+    const mockRoom = getMockRoom(roomId);
+    if (!mockRoom) return null;
+    
+    return {
+      roomId: mockRoom.id,
+      roomName: mockRoom.name,
+      status: mockRoom.status,
+      maxPlayers: mockRoom.maxPlayers,
+      description: mockRoom.description,
+      createdAt: new Date(mockRoom.createdAt).toISOString(),
+      ownerId: mockRoom.ownerId,
+    };
+  }
+
+  try {
+    const response = await docClient.send(new GetCommand({
+      TableName: getTableName(),
+      Key: {
+        PK: `ROOM#${roomId}`,
+        SK: 'METADATA',
+      },
+    }));
+
+    if (!response.Item) {
+      return null;
+    }
+
+    return {
+      roomId: response.Item.id,
+      roomName: response.Item.name,
+      status: response.Item.status,
+      maxPlayers: response.Item.maxPlayers,
+      description: response.Item.description,
+      createdAt: response.Item.createdAt,
+      ownerId: response.Item.ownerId,
+    };
+  } catch (error) {
+    console.error('Error getting room by ID:', error);
+    return null;
+  }
+}
+
+// ルーム状態更新
+export async function updateRoomStatus(roomId: string, status: 'waiting' | 'playing' | 'finished') {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, updating mock data');
+    const mockRoom = getMockRoom(roomId);
+    if (!mockRoom) return null;
+    
+    updateMockRoom(roomId, { status });
+    return {
+      roomId: mockRoom.id,
+      roomName: mockRoom.name,
+      status,
+      maxPlayers: mockRoom.maxPlayers,
+      description: mockRoom.description,
+      createdAt: new Date(mockRoom.createdAt).toISOString(),
+      ownerId: mockRoom.ownerId,
+    };
+  }
+
+  try {
+    const response = await docClient.send(new UpdateCommand({
+      TableName: getTableName(),
+      Key: {
+        PK: `ROOM#${roomId}`,
+        SK: 'METADATA',
+      },
+      UpdateExpression: 'SET #status = :status, updatedAt = :updatedAt',
+      ExpressionAttributeNames: {
+        '#status': 'status',
+      },
+      ExpressionAttributeValues: {
+        ':status': status,
+        ':updatedAt': Date.now(),
+      },
+      ReturnValues: 'ALL_NEW',
+    }));
+
+    if (!response.Attributes) {
+      return null;
+    }
+
+    return {
+      roomId: response.Attributes.id,
+      roomName: response.Attributes.name,
+      status: response.Attributes.status,
+      maxPlayers: response.Attributes.maxPlayers,
+      description: response.Attributes.description,
+      createdAt: response.Attributes.createdAt,
+      ownerId: response.Attributes.ownerId,
+    };
+  } catch (error) {
+    console.error('Error updating room status:', error);
+    return null;
+  }
+}
+
+// プレイヤー取得（詳細画面用）
 export async function getRoomPlayers(roomId: string) {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, using mock players');
+    // Mock players for development
+    return [
+      {
+        playerId: 'player1',
+        playerName: 'Player 1',
+        isOwner: true,
+        joinedAt: new Date().toISOString(),
+      },
+      {
+        playerId: 'player2',
+        playerName: 'Player 2',
+        isOwner: false,
+        joinedAt: new Date().toISOString(),
+      },
+    ];
+  }
+
   try {
     const response = await docClient.send(new QueryCommand({
       TableName: getTableName(),
@@ -274,9 +400,14 @@ export async function getRoomPlayers(roomId: string) {
       },
     }));
 
-    return response.Items || [];
+    return (response.Items || []).map(item => ({
+      playerId: item.userId,
+      playerName: item.playerName || `Player ${item.userId}`,
+      isOwner: item.isOwner || false,
+      joinedAt: item.createdAt,
+    }));
   } catch (error) {
     console.error('Error getting room players:', error);
-    throw new Error('Failed to get room players');
+    return [];
   }
 }

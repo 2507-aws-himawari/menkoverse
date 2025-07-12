@@ -3,15 +3,15 @@ import { joinRoom } from '@/lib/dynamodb-client';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { roomId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { roomId } = params;
+    const roomId = params.id;
     const { playerId, userId } = await request.json();
 
     if (!roomId || !playerId || !userId) {
       return NextResponse.json(
-        { error: 'Room ID, player ID, and user ID are required' },
+        { error: 'ルームID、プレイヤーID、ユーザーIDは必須です' },
         { status: 400 }
       );
     }
@@ -20,7 +20,7 @@ export async function POST(
     
     if (!result.success) {
       return NextResponse.json(
-        { error: 'Failed to join room' },
+        { error: 'ルームへの参加に失敗しました' },
         { status: 400 }
       );
     }
@@ -29,7 +29,7 @@ export async function POST(
   } catch (error) {
     console.error('Room join error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'ルームへの参加に失敗しました' },
       { status: 500 }
     );
   }
