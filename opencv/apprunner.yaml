@@ -15,7 +15,11 @@ run:
   network:
     port: 5000
   env:
-    ENVIRONMENT: dev
-    FRONTEND_URL: http://localhost:3000
-    PYTHONUNBUFFERED: 1
-    PIP_NO_CACHE_DIR: 1
+    - name: ENVIRONMENT
+      value: dev
+    - name: FRONTEND_URL
+      value: http://localhost:3000
+    - name: PYTHONUNBUFFERED
+      value: "1"
+    - name: PIP_NO_CACHE_DIR
+      value: "1"
