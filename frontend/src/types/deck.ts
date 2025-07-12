@@ -1,3 +1,6 @@
+import type { Follower } from "@/types/follower";
+import type { CreateDeckData, UpdateDeckData, AddCardToDeckData } from "@/lib/schema/deck";
+
 export interface Deck {
   id: string;
   name: string;
@@ -13,23 +16,18 @@ export interface DeckCard {
   id: string;
   deckId: string;
   followerId: string;
-  follower: {
-    id: string;
-    name: string;
-    cost: number;
-    attack: number;
-    hp: number;
-  };
+  follower: Follower
 }
 
 export interface DeckWithCards extends Deck {
   DeckCards: DeckCard[];
 }
 
-export interface CreateDeckRequest {
-  name: string;
-}
+// zodスキーマから型をエクスポート
+export type CreateDeckInput = CreateDeckData;
+export type UpdateDeckInput = UpdateDeckData;
+export type AddCardToDeckInput = AddCardToDeckData;
 
-export interface AddCardToDeckRequest {
-  followerId: string;
-}
+// 後方互換性のためのエイリアス
+export type CreateDeckRequest = CreateDeckData;
+export type AddCardToDeckRequest = AddCardToDeckData;
