@@ -138,4 +138,4 @@ export class OpenCVClient {
 }
 
 // デフォルトクライアントインスタンス
-export const openCVClient = new OpenCVClient();
+export const openCVClient = new OpenCVClient(process.env.NEXT_PUBLIC_OPENCV_API_URL);
