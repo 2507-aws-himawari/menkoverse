@@ -17,8 +17,6 @@ run:
   env:
     - name: ENVIRONMENT
       value: dev
-    - name: FRONTEND_URL
-      value: http://localhost:3000
     - name: PYTHONUNBUFFERED
       value: "1"
     - name: PIP_NO_CACHE_DIR
