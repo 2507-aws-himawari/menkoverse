@@ -13,11 +13,6 @@ export interface CameraStreamOptions {
 }
 
 // ArUco関連型定義
-export interface ArUcoMarkerConfig {
-  dictionaryName: string; // '4x4_1000'
-  markerSize: number;     // マーカーサイズ（mm）
-}
-
 export interface DetectedMarker {
   id: number;
   position: { x: number; y: number; z: number };
@@ -28,6 +23,5 @@ export interface DetectedMarker {
 
 export interface MarkerDetectionOptions {
   enabled: boolean;
-  sensitivity: number;
-  frameRate: number;
+  // 将来的に拡張可能な構造を保持
 }
