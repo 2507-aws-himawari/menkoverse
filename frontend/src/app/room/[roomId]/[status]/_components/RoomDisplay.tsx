@@ -28,8 +28,8 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     // 固定のplayerIdを使用（再レンダリング時に変わらないように）
     const [stablePlayerId] = useState(() => `player_${currentUser.id}_${Date.now()}`);
 
-    // WebSocket接続でプレイヤー参加イベントを監視
-    const { playerJoinEvents } = useGameWebSocket(
+    // WebSocket接続でプレイヤー参加イベントを監視（接続失敗時は無効化）
+    const { playerJoinEvents, isConnected, error } = useGameWebSocket(
         room.id, 
         stablePlayerId
     );
@@ -127,6 +127,35 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     return (
         <div>
             <h1>ゲームルーム</h1>
+            
+            {/* WebSocket接続状態表示 */}
+            {error && (
+                <div style={{ 
+                    backgroundColor: '#fff3cd', 
+                    border: '1px solid #ffc107', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#856404'
+                }}>
+                    ⚠️ リアルタイム通知: {error}
+                </div>
+            )}
+            
+            {isConnected && (
+                <div style={{ 
+                    backgroundColor: '#d4edda', 
+                    border: '1px solid #28a745', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#155724'
+                }}>
+                    ✅ リアルタイム通知: 接続中
+                </div>
+            )}
             
             {/* プレイヤー参加通知 */}
             {playerJoinEvents.length > 0 && (

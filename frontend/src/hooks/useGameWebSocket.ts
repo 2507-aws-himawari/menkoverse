@@ -37,33 +37,51 @@ export function useGameWebSocket(roomId: string, playerId: string) {
     
     const wsEndpoint = process.env.NEXT_PUBLIC_WS_ENDPOINT;
     if (!wsEndpoint) {
-      console.error('NEXT_PUBLIC_WS_ENDPOINT not configured');
+      console.warn('NEXT_PUBLIC_WS_ENDPOINT not configured - WebSocket disabled');
       setError('WebSocket endpoint not configured');
       return;
     }
     
     console.log('Initializing WebSocket client:', { roomId, playerId, wsEndpoint });
     
-    const wsClient = new GameWebSocketClient(
-      wsEndpoint,
-      roomId,
-      playerId,
-      handleMessage,
-      handleConnectionChange
-    );
+    let isActive = true; // クリーンアップ時の競合状態を防ぐ
+    let wsClient: GameWebSocketClient | null = null;
     
-    wsClient.connect().catch(err => {
-      console.error('WebSocket connection failed:', err);
-      setError('Failed to connect to WebSocket');
-    });
-    
-    setClient(wsClient);
+    // 少し遅延させてから接続を開始（開発環境での重複実行を回避）
+    const timeoutId = setTimeout(() => {
+      if (!isActive) return;
+      
+      wsClient = new GameWebSocketClient(
+        wsEndpoint,
+        roomId,
+        playerId,
+        handleMessage,
+        handleConnectionChange
+      );
+      
+      // 接続エラーを適切にハンドリング
+      wsClient.connect().catch(err => {
+        if (isActive) {
+          console.warn('WebSocket connection failed (disabled for development):', err);
+          setError('WebSocket connection failed - using polling mode');
+        }
+      });
+      
+      if (isActive) {
+        setClient(wsClient);
+      }
+    }, 100); // 100ms遅延
     
     return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
       console.log('Cleaning up WebSocket client');
-      wsClient.disconnect();
+      if (wsClient) {
+        wsClient.disconnect();
+      }
+      setClient(null);
     };
-  }, [roomId, playerId, handleMessage, handleConnectionChange]);
+  }, [roomId, playerId]); // handleMessage, handleConnectionChangeを依存関係から除去
   
   const sendMessage = useCallback((data: any) => {
     if (client) {
