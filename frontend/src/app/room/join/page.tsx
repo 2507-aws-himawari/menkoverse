@@ -34,10 +34,22 @@ export default function JoinRoomPage() {
         setErrorMessage('');
 
         try {
-            await mockApi.joinRoom({
-                roomId: roomId.trim(),
-                currentUser
+            // 新しいAPIエンドポイントを使用
+            const joinResponse = await fetch(`/api/rooms/${encodeURIComponent(roomId.trim())}/join`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    playerId: `player_${currentUser.id}_${Date.now()}`,
+                    userId: currentUser.id
+                })
             });
+
+            if (!joinResponse.ok) {
+                const errorData = await joinResponse.json();
+                throw new Error(errorData.error || '参加に失敗しました');
+            }
 
             const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
 
@@ -119,10 +131,22 @@ export default function JoinRoomPage() {
                                                     setErrorMessage('');
 
                                                     try {
-                                                        await mockApi.joinRoom({
-                                                            roomId: room.id,
-                                                            currentUser
+                                                        // 新しいAPIエンドポイントを使用
+                                                        const joinResponse = await fetch(`/api/rooms/${encodeURIComponent(room.id)}/join`, {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                            },
+                                                            body: JSON.stringify({
+                                                                playerId: `player_${currentUser.id}_${Date.now()}`,
+                                                                userId: currentUser.id
+                                                            })
                                                         });
+
+                                                        if (!joinResponse.ok) {
+                                                            const errorData = await joinResponse.json();
+                                                            throw new Error(errorData.error || '参加に失敗しました');
+                                                        }
 
                                                         const roomData = await mockApi.getRoom({ roomId: room.id });
 

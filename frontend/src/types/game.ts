@@ -19,3 +19,15 @@ export interface CreateRoomResponse {
   roomId: string;
   roomName: string;
 }
+
+// 部屋参加のリクエスト・レスポンス型
+export interface JoinRoomRequest {
+  playerId: string;    // プレイヤーID
+  userId: string;      // ユーザーID
+}
+
+export interface JoinRoomResponse {
+  success: boolean;
+  roomId: string;
+  playerId: string;
+}

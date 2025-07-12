@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { fromIni } from '@aws-sdk/credential-providers';
-import type { CreateRoomRequest, CreateRoomResponse } from '@/types/game';
+import type { CreateRoomRequest, CreateRoomResponse, JoinRoomRequest, JoinRoomResponse } from '@/types/game';
 import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
 
 // DynamoDB client configuration
@@ -234,6 +234,67 @@ export async function deleteRoom(roomId: string): Promise<void> {
     console.log(`Room ${roomId} deleted successfully`);
   } catch (error) {
     console.error('Error deleting room:', error);
+    throw error;
+  }
+}
+
+// 部屋参加（最小限実装）
+export async function joinRoom(roomId: string, request: JoinRoomRequest): Promise<JoinRoomResponse> {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, simulating room join');
+    const mockRoom = getMockRoom(roomId);
+    if (!mockRoom) {
+      throw new Error(`部屋が見つかりません: ${roomId}`);
+    }
+    
+    if (mockRoom.status !== 'waiting') {
+      throw new Error(`この部屋は参加できません (状態: ${mockRoom.status})`);
+    }
+
+    // モックデータでは簡単な検証のみ実装
+    return {
+      success: true,
+      roomId,
+      playerId: request.playerId
+    };
+  }
+
+  try {
+    // 部屋の存在確認
+    const room = await getRoomById(roomId);
+    if (!room) {
+      throw new Error(`部屋が見つかりません: ${roomId}`);
+    }
+
+    if (room.status !== 'waiting') {
+      throw new Error(`この部屋は参加できません (状態: ${room.status})`);
+    }
+
+    // プレイヤー情報をDynamoDBに保存
+    const timestamp = Date.now();
+    await docClient.send(new PutCommand({
+      TableName: getTableName(),
+      Item: {
+        PK: `ROOM#${roomId}`,
+        SK: `PLAYER#${request.playerId}`,
+        entityType: 'player',
+        playerId: request.playerId,
+        userId: request.userId,
+        roomId,
+        joinedAt: timestamp,
+        isActive: true
+      }
+    }));
+
+    console.log(`Player ${request.playerId} joined room ${roomId}`);
+    return {
+      success: true,
+      roomId,
+      playerId: request.playerId
+    };
+  } catch (error) {
+    console.error('Error joining room:', error);
     throw error;
   }
 }
