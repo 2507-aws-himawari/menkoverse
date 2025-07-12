@@ -4,6 +4,7 @@ import { AuthStack } from './auth-stack';
 import { DataStack } from './data-stack';
 import { AppStack } from './app-stack';
 import { RealtimeStack } from './realtime-stack';
+import { OpenCVStack } from './opencv-stack';
 
 export interface MenkoverseStackProps extends cdk.StackProps {
   /**
@@ -53,6 +54,7 @@ export class MenkoverseApp extends cdk.Stack {
   public readonly dataStack: DataStack;
   public readonly appStack: AppStack;
   public readonly realtimeStack: RealtimeStack;
+  public readonly openCVStack: OpenCVStack;
 
   public constructor(scope: cdk.App, id: string, props: MenkoverseStackProps = {}) {
     super(scope, id, props);
@@ -102,11 +104,21 @@ export class MenkoverseApp extends cdk.Stack {
       monthlyBudgetLimit: props.monthlyBudgetLimit,
     });
 
+    // 6. OpenCV Stack (OpenCV API Server) - Depends on Core stack
+    this.openCVStack = new OpenCVStack(scope, `${stackNamePrefix}-OpenCV`, {
+      ...props,
+      vpcConnectorArn: cdk.Fn.importValue(`${stackNamePrefix}-App-VpcConnectorArn`),
+      environment: envName,
+      frontendUrl: `https://${this.appStack.appRunnerService.attrServiceUrl}`,
+    });
+
     // Dependencies
     this.dataStack.addDependency(this.coreStack);
     this.appStack.addDependency(this.coreStack);
     this.appStack.addDependency(this.authStack);
     this.appStack.addDependency(this.dataStack);
+    this.openCVStack.addDependency(this.coreStack);
+    this.openCVStack.addDependency(this.appStack);
 
     // Cross-stack outputs (for debugging and external reference)
     new cdk.CfnOutput(this, 'ApplicationUrl', {
@@ -125,6 +137,12 @@ export class MenkoverseApp extends cdk.Stack {
       key: 'WebSocketUrl',
       description: 'WebSocket API URL for real-time communication',
       value: `${this.realtimeStack.webSocketApi.apiEndpoint}/${envName}`,
+    });
+
+    new cdk.CfnOutput(this, 'OpenCVApiUrl', {
+      key: 'OpenCVApiUrl',
+      description: 'OpenCV API URL for marker detection',
+      value: `https://${this.openCVStack.appRunnerService.attrServiceUrl}`,
     });
   }
 }

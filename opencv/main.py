@@ -3,6 +3,7 @@ FastAPI application for ArUco marker detection
 """
 
 import io
+import os
 import logging
 from typing import Dict, Any
 import cv2
@@ -24,10 +25,28 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Get environment variables
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
+# Configure CORS origins based on environment
+if ENVIRONMENT == "prod":
+    # Production origins
+    allowed_origins = [
+        FRONTEND_URL,
+        "https://menkoverse.com",
+    ]
+else:
+    # Development origins
+    allowed_origins = [
+        "http://localhost:3000",
+        FRONTEND_URL,
+    ]
+
 # Add CORS middleware for web browser access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # In production, specify actual origins
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
