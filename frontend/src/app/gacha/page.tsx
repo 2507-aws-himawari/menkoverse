@@ -1,15 +1,15 @@
 'use client';
-import { SignOut } from "@/app/components/signOut";
+
 import { Footer } from "@/app/components/footer";
 
-export default function HomePage() {
+export default function GachaPage() {
 
     return (
         <div>
             <div>
                 <h1>メンコバース</h1>
                 <div>
-                    <SignOut />
+                    <p>ガチャ</p>
                 </div>
             </div>
             < Footer />
