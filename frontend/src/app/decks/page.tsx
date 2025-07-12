@@ -5,6 +5,7 @@ import { useDecks } from '@/app/decks/_hooks/useDecks';
 import { CreateDeckForm } from './_components/CreateDeckForm';
 import { DeckListItem } from './_components/DeckListItem';
 import type { DeckWithCards } from '@/types/deck';
+import { Footer } from "@/app/components/footer";
 
 export default function DecksPage() {
   const router = useRouter();
@@ -31,7 +32,6 @@ export default function DecksPage() {
   return (
     <div>
       <h1>デッキ管理</h1>
-      
       <div>
         <button onClick={() => router.push('/home')}>ホームに戻る</button>
         <CreateDeckForm onDeckCreated={handleDeckCreated} />
@@ -55,6 +55,7 @@ export default function DecksPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

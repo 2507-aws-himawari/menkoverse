@@ -5,6 +5,7 @@ import { useDeck, useAvailableCards } from '@/app/decks/_hooks/useDecks';
 import { DeckNameEditor } from '../_components/DeckNameEditor';
 import { DeckCardList } from '../_components/DeckCardList';
 import { AvailableCardList } from '../_components/AvailableCardList';
+import { Footer } from '@/app/components/footer';
 
 export default function DeckEditPage() {
   const router = useRouter();
@@ -75,11 +76,13 @@ export default function DeckEditPage() {
             availableCards={availableCards}
             onCardAdded={handleCardAdded}
             currentCardCount={deck.DeckCards?.length || 0}
+            currentDeckCards={deck.DeckCards || []}
           />
         ) : (
           <p>利用可能なカードがありません</p>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
