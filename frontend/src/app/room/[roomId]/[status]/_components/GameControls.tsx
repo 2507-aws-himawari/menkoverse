@@ -36,10 +36,7 @@ export function GameControls({
 
     return (
         <div>
-            <h2>ゲーム進行中</h2>
             <div>
-                <p>参加者: {roomPlayers.length}/2</p>
-
                 {/* 現在のターン情報 */}
                 {activeUser && (
                     <p style={{ fontWeight: 'bold', color: 'blue' }}>
