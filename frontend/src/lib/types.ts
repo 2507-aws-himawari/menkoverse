@@ -144,3 +144,10 @@ export interface SummonFollowerInput {
     currentUser: MockUser;
     handCardId: string;
 }
+
+export interface SummonFollowerResult {
+    success: boolean;
+    boardCard?: MockBoardCard;
+    message?: string;
+    reason?: 'board_full' | 'insufficient_pp' | 'invalid_card' | 'not_your_turn' | 'unknown';
+}

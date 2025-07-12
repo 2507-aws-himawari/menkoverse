@@ -44,7 +44,8 @@ import type {
     DamagePlayerInput,
     DrawCardsInput,
     GetHandInput,
-    SummonFollowerInput
+    SummonFollowerInput,
+    SummonFollowerResult
 } from './types';
 
 export const mockApi = {
@@ -593,32 +594,62 @@ export const mockApi = {
     },
 
     // フォロワーを召喚
-    summonFollower: async (input: SummonFollowerInput): Promise<MockBoardCard> => {
+    summonFollower: async (input: SummonFollowerInput): Promise<SummonFollowerResult> => {
         const room = getRoomById(input.roomId);
-        if (!room) throw new Error('ルームが見つかりません');
+        if (!room) {
+            return {
+                success: false,
+                message: 'ルームが見つかりません',
+                reason: 'unknown'
+            };
+        }
 
         const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
-        if (!player) throw new Error('プレイヤーが見つかりません');
+        if (!player) {
+            return {
+                success: false,
+                message: 'プレイヤーが見つかりません',
+                reason: 'unknown'
+            };
+        }
 
         // アクティブプレイヤーかチェック
         const activePlayer = getActivePlayer(room);
         if (!activePlayer || activePlayer.userId !== input.currentUser.id) {
-            throw new Error('あなたのターンではありません');
+            return {
+                success: false,
+                message: 'あなたのターンではありません',
+                reason: 'not_your_turn'
+            };
         }
 
         // 手札から該当カードを取得
         const handCard = mockHands.find(hand => hand.id === input.handCardId && hand.roomPlayerId === player.id);
-        if (!handCard) throw new Error('指定された手札カードが見つかりません');
+        if (!handCard) {
+            return {
+                success: false,
+                message: '指定された手札カードが見つかりません',
+                reason: 'invalid_card'
+            };
+        }
 
         // PP不足チェック
         if (player.pp < handCard.cost) {
-            throw new Error(`PPが不足しています（必要: ${handCard.cost}, 現在: ${player.pp}）`);
+            return {
+                success: false,
+                message: `PPが不足しています（必要: ${handCard.cost}, 現在: ${player.pp}）`,
+                reason: 'insufficient_pp'
+            };
         }
 
         // ボードの空きスペースをチェック
         const currentBoardCards = getBoardByRoomPlayerId(player.id);
         if (currentBoardCards.length >= 5) {
-            throw new Error('ボードが満員です');
+            return {
+                success: false,
+                message: 'ボードが満員です（最大5体まで）',
+                reason: 'board_full'
+            };
         }
 
         // PP消費
@@ -643,6 +674,10 @@ export const mockApi = {
             mockHands.splice(handIndex, 1);
         }
 
-        return boardCard;
+        return {
+            success: true,
+            boardCard: boardCard,
+            message: 'フォロワーを召喚しました'
+        };
     },
 };
