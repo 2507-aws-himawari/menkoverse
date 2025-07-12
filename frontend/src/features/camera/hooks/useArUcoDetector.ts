@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { DetectedMarker, MarkerDetectionOptions } from '../types';
+import type { DetectedMarker, MarkerDetectionOptions, OpenCVDetectedMarker } from '../types';
+import { openCVClient } from '../libs/opencv-client';
 
 export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
   const [detectedMarkers, setDetectedMarkers] = useState<DetectedMarker[]>([]);
@@ -13,6 +14,28 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
     console.log('Detection options updated:', newOptions);
   }, []);
 
+  // OpenCV検出結果をフロントエンド形式に変換
+  const convertOpenCVToDetectedMarkers = useCallback((openCVMarkers: OpenCVDetectedMarker[]): DetectedMarker[] => {
+    return openCVMarkers.map(marker => {
+      // corners から中心位置を計算
+      const corners = marker.corners;
+      const centerX = corners.reduce((sum, corner) => sum + (corner[0] || 0), 0) / corners.length;
+      const centerY = corners.reduce((sum, corner) => sum + (corner[1] || 0), 0) / corners.length;
+
+      return {
+        id: marker.id,
+        position: { 
+          x: centerX - 320, // 画面中心を0とするため調整
+          y: centerY - 240, // 画面中心を0とするため調整
+          z: 0 
+        },
+        rotation: { x: 0, y: 0, z: 0 }, // 簡易実装では回転情報は使用しない
+        confidence: marker.confidence,
+        timestamp: Date.now(),
+      };
+    });
+  }, []);
+
   // 手動検出実行
   const startDetection = useCallback(async () => {
     if (!videoElement || isDetecting) return;
@@ -21,19 +44,17 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
     setError(null);
 
     try {
-      // 仮の検出結果を返す（テスト用）
-      const mockMarkers: DetectedMarker[] = [
-        {
-          id: 0,
-          position: { x: 0, y: 0, z: 0 },
-          rotation: { x: 0, y: 0, z: 0 },
-          confidence: 0.8,
-          timestamp: Date.now(),
-        },
-      ];
-
-      setDetectedMarkers(mockMarkers);
-      console.log('Mock marker detection completed:', mockMarkers);
+      // Video要素からフレームキャプチャしてOpenCV APIで検出
+      console.log('Starting OpenCV marker detection...');
+      const result = await openCVClient.detectMarkersFromVideo(videoElement);
+      
+      console.log('OpenCV detection result:', result);
+      
+      // 検出結果を変換
+      const convertedMarkers = convertOpenCVToDetectedMarkers(result.detected_markers);
+      setDetectedMarkers(convertedMarkers);
+      
+      console.log('Converted markers:', convertedMarkers);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '検出に失敗しました';
       setError(errorMessage);
@@ -41,7 +62,7 @@ export const useArUcoDetector = (videoElement: HTMLVideoElement | null) => {
     } finally {
       setIsDetecting(false);
     }
-  }, [videoElement, isDetecting]);
+  }, [videoElement, isDetecting, convertOpenCVToDetectedMarkers]);
 
   // 検出停止
   const stopDetection = useCallback(() => {
