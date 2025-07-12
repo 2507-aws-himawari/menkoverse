@@ -14,11 +14,8 @@ import {
     getDeckById,
     getDeckCardsByDeckId,
     getHandsByRoomPlayerId,
-    updateMockRoomPlayers,
-    updateMockHands,
     getFollowerById,
     getBoardByRoomPlayerId,
-    updateMockBoard,
     mockBoard
 } from './mockData';
 import type {
@@ -344,7 +341,6 @@ export const mockApi = {
             }
         } catch (error) {
             console.error(`Failed to draw card at turn start for player ${input.currentUser.name}:`, error);
-            // ドローに失敗してもターン開始は継続
         }
 
         return player;
@@ -411,7 +407,7 @@ export const mockApi = {
         return room;
     },
 
-    // PP消費（デモ用）
+    // PP消費
     consumePP: async (input: ConsumePPInput): Promise<MockRoomPlayer | null> => {
         const room = getRoomById(input.roomId);
         if (!room) return null;

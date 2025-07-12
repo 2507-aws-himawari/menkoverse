@@ -162,11 +162,6 @@ export const mockFollowers: MockFollower[] = [
     { id: 'card10', name: 'エンシェントドラゴン', cost: 6, attack: 4, hp: 7 },
 ];
 
-// プレイヤーデータを更新する関数
-export const updateMockRoomPlayers = (newPlayers: MockRoomPlayer[]) => {
-    mockRoomPlayers = newPlayers;
-};
-
 // モックデータから部屋を検索する関数
 export const getRoomById = (roomId: string): MockRoom | undefined => {
     return mockRooms.find(r => r.id === roomId);
@@ -202,19 +197,9 @@ export const getHandsByRoomPlayerId = (roomPlayerId: string): MockHand[] => {
     return mockHands.filter(hand => hand.roomPlayerId === roomPlayerId);
 };
 
-// 手札を更新する関数
-export const updateMockHands = (newHands: MockHand[]) => {
-    mockHands = newHands;
-};
-
 // プレイヤーのボードを取得する関数
 export const getBoardByRoomPlayerId = (roomPlayerId: string): MockBoardCard[] => {
     return mockBoard.filter(board => board.roomPlayerId === roomPlayerId);
-};
-
-// ボードを更新する関数
-export const updateMockBoard = (newBoard: MockBoardCard[]) => {
-    mockBoard = newBoard;
 };
 
 // フォロワーIDでフォロワー情報を取得する関数
