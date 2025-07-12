@@ -14,7 +14,7 @@ export function DeckListItem({ deck, onDeckDeleted }: Props) {
   const { loading, error, execute } = useAsyncOperation();
 
   // カードの種類数を計算
-  const totalCards = deck.DeckCards?.length || deck.RentalDeckCards?.length || 0;
+  const totalCards = deck.DeckCards?.length ?? deck.RentalDeckCards?.length ?? 0;
   const isRental = isRentalDeck(deck.id);
 
   const handleDelete = async () => {
