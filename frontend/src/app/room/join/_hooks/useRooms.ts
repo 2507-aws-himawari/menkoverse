@@ -16,10 +16,10 @@ export function useRooms() {
         '/api/rooms',
         fetcher,
         {
-            refreshInterval: 5000,
-            revalidateOnFocus: true,
+            refreshInterval: 15000, // 15秒に延長
+            revalidateOnFocus: false, // フォーカス時の再検証を無効化
             revalidateOnReconnect: true,
-            dedupingInterval: 2000,
+            dedupingInterval: 5000, // 重複リクエスト防止を5秒に延長
         }
     );
 

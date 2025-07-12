@@ -19,10 +19,10 @@ export function useRoom(roomId: string | null) {
         roomId ? `/api/rooms/${roomId}` : null,
         fetcher,
         {
-            refreshInterval: 2000,
-            revalidateOnFocus: true,
+            refreshInterval: 30000, // 30秒に延長（WebSocket通知があるため）
+            revalidateOnFocus: false, // フォーカス時の再検証を無効化
             revalidateOnReconnect: true,
-            dedupingInterval: 1000,
+            dedupingInterval: 5000, // 重複リクエスト防止を5秒に延長
         }
     );
 
