@@ -85,10 +85,10 @@ export const switchTurns = (room: MockRoom, currentActivePlayer: MockRoomPlayer)
     }
 };
 
-// ターン開始時にフォロワーの攻撃権をリセット
+// ターン開始時にフォロワーの攻撃状態をリセット
 export const resetFollowerAttackStatus = (roomPlayerId: string): void => {
     const playerBoard = getBoardByRoomPlayerId(roomPlayerId);
     playerBoard.forEach((card: MockBoardCard) => {
-        card.canAttack = true;
+        card.hasAttackedThisTurn = false;
     });
 };

@@ -310,7 +310,7 @@ export const mockApi = {
         player.turn = playerTurn;
         recoverPlayerPP(player);
 
-        // ターン開始時にフォロワーの攻撃権をリセット
+        // ターン開始時にフォロワーの攻撃状態をリセット
         resetFollowerAttackStatus(player.id);
 
         // ターン開始時に1枚ドロー
@@ -381,7 +381,7 @@ export const mockApi = {
                     nextPlayer.turn = nextPlayerTurn;
                     recoverPlayerPP(nextPlayer);
 
-                    // ターン開始時にフォロワーの攻撃権をリセット
+                    // ターン開始時にフォロワーの攻撃状態をリセット
                     resetFollowerAttackStatus(nextPlayer.id);
 
                     // ターン開始時に1枚ドロー
@@ -479,7 +479,7 @@ export const mockApi = {
                     nextPlayer.turn = nextPlayerTurn;
                     recoverPlayerPP(nextPlayer);
 
-                    // ターン開始時にフォロワーの攻撃権をリセット
+                    // ターン開始時にフォロワーの攻撃状態をリセット
                     resetFollowerAttackStatus(nextPlayer.id);
 
                     // ターン開始時に1枚ドロー
@@ -671,7 +671,8 @@ export const mockApi = {
             attack: handCard.attack,
             hp: handCard.hp,
             position: currentBoardCards.length,
-            canAttack: false
+            summonedTurn: player.turn,
+            hasAttackedThisTurn: false
         };
 
         mockBoard.push(boardCard);
@@ -731,11 +732,19 @@ export const mockApi = {
             };
         }
 
-        // 攻撃可能かチェック
-        if (!attackerCard.canAttack) {
+        // 攻撃可能かチェック（召喚酔い・攻撃済みチェック）
+        if (attackerCard.summonedTurn === player.turn) {
             return {
                 success: false,
-                message: 'このフォロワーは攻撃できません',
+                message: 'このフォロワーは召喚酔いで攻撃できません',
+                reason: 'cannot_attack'
+            };
+        }
+
+        if (attackerCard.hasAttackedThisTurn) {
+            return {
+                success: false,
+                message: 'このフォロワーは既に攻撃済みです',
                 reason: 'cannot_attack'
             };
         }
@@ -758,7 +767,7 @@ export const mockApi = {
             targetPlayer.hp = newHp;
 
             // 攻撃者は攻撃済みにする
-            attackerCard.canAttack = false;
+            attackerCard.hasAttackedThisTurn = true;
 
             // 勝敗判定
             if (newHp <= 0) {
@@ -800,7 +809,7 @@ export const mockApi = {
             targetCard.hp -= attackerDamage;
 
             // 攻撃者は攻撃済みにする
-            attackerCard.canAttack = false;
+            attackerCard.hasAttackedThisTurn = true;
 
             // 破壊チェック
             if (attackerCard.hp <= 0) {

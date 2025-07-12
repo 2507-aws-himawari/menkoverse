@@ -41,7 +41,8 @@ export interface MockBoardCard {
     attack: number;
     hp: number;
     position: number;
-    canAttack: boolean;
+    summonedTurn: number; // 召喚されたターン数
+    hasAttackedThisTurn: boolean; // このターンに攻撃済みか
 }
 
 export interface MockRoomPlayer {
