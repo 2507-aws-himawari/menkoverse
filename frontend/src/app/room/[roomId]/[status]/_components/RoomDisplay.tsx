@@ -1,8 +1,12 @@
 import { getUserById, getActivePlayer, calculatePPMax } from '@/lib/gameLogic';
 import { GAME_CONSTANTS } from '@/lib/constants';
 import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
+import { mockApi } from '@/lib/mockApi';
 import type { MockRoom, MockRoomPlayer } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { useAtom } from 'jotai';
+import { currentUserAtom } from '@/lib/atoms';
+import { useState } from 'react';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -12,10 +16,52 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     // プレイヤー情報を取得
     const roomPlayers = getPlayersByRoomId(room.id);
     const router = useRouter();
+    const [currentUser] = useAtom(currentUserAtom);
+    const [isStartingGame, setIsStartingGame] = useState(false);
 
     const handleBackHome = () => {
         router.push('/home');
     };
+
+    const handleStartGame = async () => {
+        setIsStartingGame(true);
+        try {
+            const updatedRoom = await mockApi.startGame({
+                roomId: room.id,
+                currentUser
+            });
+
+            if (updatedRoom) {
+                const newUrl = `/room/${encodeURIComponent(room.id)}/${updatedRoom.status}`;
+                router.push(newUrl);
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'ゲーム開始に失敗しました');
+        } finally {
+            setIsStartingGame(false);
+        }
+    };
+
+    const handleDemoStartGame = async () => {
+        setIsStartingGame(true);
+        try {
+            const updatedRoom = await mockApi.startGame({
+                roomId: room.id,
+                currentUser,
+                isDemo: true
+            });
+
+            if (updatedRoom) {
+                const newUrl = `/room/${encodeURIComponent(room.id)}/${updatedRoom.status}`;
+                router.push(newUrl);
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'ゲーム開始に失敗しました');
+        } finally {
+            setIsStartingGame(false);
+        }
+    };
+
     const Turn = roomPlayers.length > 0 ? Math.max(...roomPlayers.map(p => p.turn)) : 1;
 
     return (
@@ -76,6 +122,53 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                             <p>参加者: {roomPlayers.length}/2</p>
                             {roomPlayers.length < 2 && (
                                 <p>もう1人のプレイヤーを待っています...</p>
+                            )}
+                            {roomPlayers.length === 2 && room.ownerId === currentUser.id && (
+                                <div>
+                                    <p>プレイヤーが揃いました！</p>
+                                    <button
+                                        onClick={handleStartGame}
+                                        disabled={isStartingGame}
+                                        style={{
+                                            padding: '10px 20px',
+                                            fontSize: '16px',
+                                            backgroundColor: '#4CAF50',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '5px',
+                                            cursor: isStartingGame ? 'not-allowed' : 'pointer',
+                                            opacity: isStartingGame ? 0.6 : 1
+                                        }}
+                                    >
+                                        {isStartingGame ? 'ゲーム開始中...' : 'ゲーム開始'}
+                                    </button>
+                                </div>
+                            )}
+                            {roomPlayers.length === 2 && room.ownerId !== currentUser.id && (
+                                <div>
+                                    <p>ホストがゲームを開始するまでお待ちください...</p>
+                                    <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
+                                        <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px 0' }}>
+                                            デモ用: ホストが開始したことにして進める
+                                        </p>
+                                        <button
+                                            onClick={handleDemoStartGame}
+                                            disabled={isStartingGame}
+                                            style={{
+                                                padding: '8px 16px',
+                                                fontSize: '14px',
+                                                backgroundColor: '#FF9800',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '5px',
+                                                cursor: isStartingGame ? 'not-allowed' : 'pointer',
+                                                opacity: isStartingGame ? 0.6 : 1
+                                            }}
+                                        >
+                                            {isStartingGame ? 'ゲーム開始中...' : 'ホストが開始したことにする'}
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>

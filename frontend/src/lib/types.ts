@@ -35,6 +35,13 @@ export interface GetRoomInput {
     roomId: string;
 }
 
+export interface StartGameInput {
+    roomId: string;
+    currentUser: MockUser
+    // デモ用フラグ
+    isDemo?: boolean;
+}
+
 export interface UpdatePlayerStatusInput {
     roomId: string;
     currentUser: MockUser;

@@ -16,6 +16,7 @@ import type {
     CreateRoomInput,
     JoinRoomInput,
     GetRoomInput,
+    StartGameInput,
     UpdatePlayerStatusInput,
     StartTurnInput,
     EndTurnInput,
@@ -85,27 +86,7 @@ export const mockApi = {
 
         mockRoomPlayers.push(newPlayer);
 
-        // ゲーム開始
-        const updatedRoomPlayers = getPlayersByRoomId(input.roomId);
-        if (updatedRoomPlayers.length === 2) {
-            room.status = 'playing';
-
-            const shouldShuffle = Math.random() < 0.5;
-            const [player1, player2] = shouldShuffle ? [updatedRoomPlayers[1], updatedRoomPlayers[0]] : updatedRoomPlayers;
-
-            // ターン状態を設定
-            if (player1) {
-                player1.turn = 1;
-                player1.pp = 1;
-                player1.turnStatus = 'active';
-            }
-            if (player2) {
-                player2.turn = 1;
-                player2.pp = 0;
-                player2.turnStatus = 'ended';
-            }
-        }
-
+        // 2人揃っても自動でゲーム開始しない（手動開始に変更）
         return newPlayer;
     },
 
@@ -118,6 +99,52 @@ export const mockApi = {
     // 利用可能な部屋一覧を取得
     getRooms: async (): Promise<MockRoom[]> => {
         return mockRooms;
+    },
+
+    // ゲーム開始
+    startGame: async (input: StartGameInput): Promise<MockRoom | null> => {
+        const room = getRoomById(input.roomId);
+        if (!room) {
+            throw new Error('部屋が見つかりません');
+        }
+
+        // デモモードでない場合のみホスト権限をチェック
+        if (!input.isDemo && room.ownerId !== input.currentUser.id) {
+            throw new Error('ホストのみゲームを開始できます');
+        }
+
+        // 既にゲーム中の場合はエラー
+        if (room.status !== 'waiting') {
+            throw new Error('ゲームは既に開始されています');
+        }
+
+        const roomPlayers = getPlayersByRoomId(input.roomId);
+        if (roomPlayers.length !== 2) {
+            throw new Error('プレイヤーが2人揃っていません');
+        }
+
+        // ゲーム開始
+        console.log(`Starting game for room ${input.roomId}, changing status from ${room.status} to playing`);
+        room.status = 'playing';
+
+        // ランダムでプレイヤーの順番を決定
+        const shouldShuffle = Math.random() < 0.5;
+        const [player1, player2] = shouldShuffle ? [roomPlayers[1], roomPlayers[0]] : roomPlayers;
+
+        // ターン状態を設定
+        if (player1) {
+            player1.turn = 1;
+            player1.pp = 1;
+            player1.turnStatus = 'active';
+        }
+        if (player2) {
+            player2.turn = 1;
+            player2.pp = 0;
+            player2.turnStatus = 'ended';
+        }
+
+        console.log(`Game started successfully. Room status: ${room.status}`);
+        return room;
     },
 
     // プレイヤーの状態を更新
