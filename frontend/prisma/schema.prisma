@@ -83,6 +83,7 @@ model Follower {
     attack  Int
     hp      Int
     DeckCards DeckCard[]
+    RentalDeckCards RentalDeckCard[]
 }
 
 model Deck {
@@ -99,4 +100,20 @@ model DeckCard {
     followerId String
     deck      Deck @relation(fields: [deckId], references: [id], onDelete: Cascade)
     follower  Follower @relation(fields: [followerId], references: [id], onDelete: Cascade)
+}
+
+model RentalDeck {
+    id        String   @id @default("R-${cuid()}")
+    name      String
+
+    cards RentalDeckCard[]
+}
+
+model RentalDeckCard {
+    id           String @id @default(cuid())
+    rentalDeckId String
+    followerId   String
+
+    rentalDeck RentalDeck @relation(fields: [rentalDeckId], references: [id], onDelete: Cascade)
+    follower   Follower   @relation(fields: [followerId], references: [id])
 }
