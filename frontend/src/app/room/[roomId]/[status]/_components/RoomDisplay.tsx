@@ -24,11 +24,14 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const [isStartingGame, setIsStartingGame] = useState(false);
     const [, forceUpdate] = useState({});
     const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
+    
+    // 固定のplayerIdを使用（再レンダリング時に変わらないように）
+    const [stablePlayerId] = useState(() => `player_${currentUser.id}_${Date.now()}`);
 
     // WebSocket接続でプレイヤー参加イベントを監視
     const { playerJoinEvents } = useGameWebSocket(
         room.id, 
-        `player_${currentUser.id}_${Date.now()}`
+        stablePlayerId
     );
 
     // プレイヤー参加イベントを監視してUIを更新
