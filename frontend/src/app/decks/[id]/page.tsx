@@ -74,6 +74,7 @@ export default function DeckEditPage() {
             deckId={deckId}
             availableCards={availableCards}
             onCardAdded={handleCardAdded}
+            currentCardCount={deck.DeckCards?.length || 0}
           />
         ) : (
           <p>利用可能なカードがありません</p>
