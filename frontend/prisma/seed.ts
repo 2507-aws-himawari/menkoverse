@@ -43,6 +43,7 @@ async function main() {
         if (total >= 40) break;
         await prisma.rentalDeckCard.create({
           data: {
+            id: conf.id,
             rentalDeckId: deck.id,
             followerId: conf.followerId,
           },
