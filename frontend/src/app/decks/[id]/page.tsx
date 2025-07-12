@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useParams } from 'next/navigation';
-import { useDeck, useAvailableCards } from '@/hooks/useDecks';
+import { useDeck, useAvailableCards } from '@/app/decks/_hooks/useDecks';
 import { DeckNameEditor } from '../_components/DeckNameEditor';
 import { DeckCardList } from '../_components/DeckCardList';
 import { AvailableCardList } from '../_components/AvailableCardList';

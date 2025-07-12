@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createDeckSchema } from '@/lib/schema/deck';
 import type { CreateDeckInput } from '@/types/deck';
-import { useAsyncOperation } from '@/hooks/useDecks';
+import { useAsyncOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
   onDeckCreated: (deck: any) => void;

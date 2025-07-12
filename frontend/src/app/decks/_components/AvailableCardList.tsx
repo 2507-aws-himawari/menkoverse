@@ -1,5 +1,5 @@
 import type { Follower } from '@/types/follower';
-import { useAsyncOperation } from '@/hooks/useDecks';
+import { useCardOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
   deckId: string;
@@ -8,10 +8,10 @@ interface Props {
 }
 
 export function AvailableCardList({ deckId, availableCards, onCardAdded }: Props) {
-  const { loading, error, execute } = useAsyncOperation();
+  const { isLoading, error, execute } = useCardOperation();
 
   const handleAddCard = async (followerId: string) => {
-    const result = await execute(async () => {
+    const result = await execute(followerId, async () => {
       const response = await fetch(`/api/decks/${deckId}/cards`, {
         method: 'POST',
         headers: {
@@ -47,9 +47,9 @@ export function AvailableCardList({ deckId, availableCards, onCardAdded }: Props
               <p>コスト: {card.cost} | 攻撃力: {card.attack} | HP: {card.hp}</p>
               <button 
                 onClick={() => handleAddCard(card.id)}
-                disabled={loading}
+                disabled={isLoading(card.id)}
               >
-                {loading ? '追加中...' : 'デッキに追加'}
+                {isLoading(card.id) ? '追加中...' : 'デッキに追加'}
               </button>
             </div>
           ))}

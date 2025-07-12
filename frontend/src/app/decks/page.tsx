@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useDecks } from '@/hooks/useDecks';
+import { useDecks } from '@/app/decks/_hooks/useDecks';
 import { CreateDeckForm } from './_components/CreateDeckForm';
 import { DeckListItem } from './_components/DeckListItem';
 

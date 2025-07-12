@@ -1,6 +1,6 @@
 import { useRouter } from 'next/navigation';
 import type { DeckWithCards } from '@/types/deck';
-import { useAsyncOperation } from '@/hooks/useDecks';
+import { useAsyncOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
   deck: DeckWithCards;

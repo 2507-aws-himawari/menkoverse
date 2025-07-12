@@ -1,5 +1,5 @@
 import type { DeckCard } from '@/types/deck';
-import { useAsyncOperation } from '@/hooks/useDecks';
+import { useCardOperation } from '@/app/decks/_hooks/useDecks';
 
 interface Props {
   deckId: string;
@@ -8,14 +8,14 @@ interface Props {
 }
 
 export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
-  const { loading, error, execute } = useAsyncOperation();
+  const { isLoading, error, execute } = useCardOperation();
 
   const handleRemoveCard = async (deckCardId: string) => {
     if (!confirm('このカードをデッキから削除しますか？')) {
       return;
     }
 
-    const result = await execute(async () => {
+    const result = await execute(deckCardId, async () => {
       const response = await fetch(`/api/decks/${deckId}/cards?deckCardId=${deckCardId}`, {
         method: 'DELETE',
       });
@@ -48,10 +48,10 @@ export function DeckCardList({ deckId, cards, onCardRemoved }: Props) {
               <p>コスト: {deckCard.follower.cost} | 攻撃力: {deckCard.follower.attack} | HP: {deckCard.follower.hp}</p>
               <button 
                 onClick={() => handleRemoveCard(deckCard.id)}
-                disabled={loading}
+                disabled={isLoading(deckCard.id)}
                 style={{ color: 'red' }}
               >
-                {loading ? '削除中...' : '削除'}
+                {isLoading(deckCard.id) ? '削除中...' : '削除'}
               </button>
             </div>
           ))}
