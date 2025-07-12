@@ -99,25 +99,7 @@ function ActivePlayerControls({
     const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
 
     return (
-        <div style={{ marginTop: '16px' }}>
-            <h3>あなたのターンです</h3>
-            {/* HP減少デモボタン */}
-            <div style={{ marginBottom: '12px' }}>
-                <h4>リーダーにダメージ</h4>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    {onDamageToSelf && (
-                        <button onClick={() => onDamageToSelf(1)} disabled={loading}>
-                            自分に1ダメージ
-                        </button>
-                    )}
-                    {opponentPlayer && onDamageToOpponent && (
-                        <button onClick={() => onDamageToOpponent(opponentPlayer.userId, 1)} disabled={loading}>
-                            相手に1ダメージ
-                        </button>
-                    )}
-                </div>
-            </div>
-            {/* ターン終了ボタン */}
+        <div >
             <button
                 onClick={onEndTurn}
                 disabled={loading}
