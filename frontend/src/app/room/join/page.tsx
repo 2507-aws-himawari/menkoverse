@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { mockApi } from '@/lib/mockApi';
-import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
+import { mockUsers } from '@/lib/mockData';
 import { currentUserAtom } from '@/lib/atoms';
 import { useRooms } from './_hooks/useRooms';
 import { Footer } from '@/app/components/footer';
@@ -51,13 +51,15 @@ export default function JoinRoomPage() {
                 throw new Error(errorData.error || '参加に失敗しました');
             }
 
-            const roomData = await mockApi.getRoom({ roomId: roomId.trim() });
-
-            if (!roomData) {
+            // 参加成功後、部屋情報をAPIから取得
+            const roomResponse = await fetch(`/api/rooms/${encodeURIComponent(roomId.trim())}`);
+            
+            if (!roomResponse.ok) {
                 setErrorMessage('部屋の情報を取得できませんでした');
                 return;
             }
 
+            const roomData = await roomResponse.json();
             const targetUrl = `/room/${encodeURIComponent(roomId.trim())}/${roomData.status}`;
             router.push(targetUrl);
         } catch (error) {
@@ -116,14 +118,12 @@ export default function JoinRoomPage() {
                         {roomsError && <div>部屋一覧の取得に失敗しました: {roomsError.message}</div>}
                         <div>
                             {availableRooms.map((room) => {
-                                const roomPlayers = getPlayersByRoomId(room.id);
                                 return (
                                     <div key={room.id}>
                                         <span>{room.id}</span>
                                         <span>{room.status === 'waiting' ? '待機中' :
                                             room.status === 'playing' ? 'プレイ中' : '終了'}</span>
-                                        <span>({roomPlayers.length}/2)</span>
-                                        {room.status === 'waiting' && roomPlayers.length < 2 && (
+                                        {room.status === 'waiting' && (
                                             <button
                                                 onClick={async () => {
                                                     setRoomId(room.id);
@@ -148,13 +148,15 @@ export default function JoinRoomPage() {
                                                             throw new Error(errorData.error || '参加に失敗しました');
                                                         }
 
-                                                        const roomData = await mockApi.getRoom({ roomId: room.id });
-
-                                                        if (!roomData) {
+                                                        // 参加成功後、部屋情報をAPIから取得
+                                                        const roomResponse = await fetch(`/api/rooms/${encodeURIComponent(room.id)}`);
+                                                        
+                                                        if (!roomResponse.ok) {
                                                             setErrorMessage('部屋の情報を取得できませんでした');
                                                             return;
                                                         }
 
+                                                        const roomData = await roomResponse.json();
                                                         const targetUrl = `/room/${encodeURIComponent(room.id)}/${roomData.status}`;
                                                         router.push(targetUrl);
                                                     } catch (error) {
