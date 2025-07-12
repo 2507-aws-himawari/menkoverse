@@ -43,6 +43,13 @@ async function processRecord(record: DynamoDBRecord) {
       return;
     }
     
+    // Handle player join events specifically
+    if (gameEvent.sk.startsWith('PLAYER#') && record.eventName === 'INSERT') {
+      console.log('Player join event detected:', gameEvent);
+      await handlePlayerJoinEvent(gameEvent);
+      return;
+    }
+    
     console.log('Game event parsed:', gameEvent);
     
     // Get active connections for the room
@@ -177,5 +184,45 @@ async function removeStaleConnection(connectionId: string) {
     }
   } catch (error) {
     console.error('Error removing stale connection:', error);
+  }
+}
+
+async function handlePlayerJoinEvent(gameEvent: any) {
+  try {
+    console.log('Processing player join event:', gameEvent);
+    
+    // Create player join notification
+    const playerJoinNotification = {
+      type: 'PLAYER_JOINED',
+      roomId: gameEvent.roomId,
+      playerId: gameEvent.data.playerId,
+      userId: gameEvent.data.userId,
+      timestamp: gameEvent.timestamp
+    };
+    
+    console.log('Player join notification:', playerJoinNotification);
+    
+    // Get active connections for the room (exclude the joining player's connection)
+    const connections = await getActiveConnections(gameEvent.roomId);
+    console.log(`Found ${connections.length} active connections for room ${gameEvent.roomId}`);
+    
+    // Send to all connected players
+    const sendPromises = connections.map(conn => 
+      sendToConnection(conn.connectionId, playerJoinNotification)
+    );
+    
+    const sendResults = await Promise.allSettled(sendPromises);
+    
+    // Log send results
+    sendResults.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to send player join notification to connection ${connections[index].connectionId}:`, result.reason);
+      } else {
+        console.log(`Successfully sent player join notification to connection ${connections[index].connectionId}`);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error handling player join event:', error);
   }
 }
