@@ -36,7 +36,16 @@ export function DeckListItem({ deck, onDeckDeleted }: Props) {
   return (
     <div style={{ padding: '10px', border: '1px solid #ddd', margin: '10px 0' }}>
       <h3>{deck.name}</h3>
-      <p>カード数: {deck.DeckCards?.length || 0}</p>
+      <p>
+        カード数: {deck.DeckCards?.length || 0}/40枚
+        {(deck.DeckCards?.length || 0) === 40 ? (
+          <span style={{ color: 'green', marginLeft: '10px' }}>✓ 完成</span>
+        ) : (deck.DeckCards?.length || 0) > 40 ? (
+          <span style={{ color: 'red', marginLeft: '10px' }}>⚠ 40枚を超えています</span>
+        ) : (
+          <span style={{ color: 'orange', marginLeft: '10px' }}>未完成</span>
+        )}
+      </p>
       {error && (
         <div style={{ color: 'red', fontSize: '14px' }}>
           {error}
