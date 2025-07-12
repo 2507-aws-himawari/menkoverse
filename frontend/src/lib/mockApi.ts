@@ -173,16 +173,67 @@ export const mockApi = {
         // 両プレイヤーに初期手札をドロー
         for (const player of roomPlayers) {
             const user = mockUsers.find(u => u.id === player.userId);
-            if (user) {
+            if (user && player.selectedDeckId) {
                 try {
-                    await mockApi.drawCards({
-                        roomId: input.roomId,
-                        currentUser: user,
-                        count: 5
-                    });
-                    console.log(`Initial hand drawn for player ${user.name}`);
+                    const deckCards = getDeckCardsByDeckId(player.selectedDeckId);
+                    if (deckCards.length > 0) {
+                        const shuffledCards = [...deckCards].sort(() => Math.random() - 0.5);
+                        const selectedCards = shuffledCards.slice(0, 5);
+
+                        const newHandCards: MockHand[] = selectedCards.map((deckCard, index) => {
+                            const follower = getFollowerById(deckCard.followerId);
+                            if (!follower) throw new Error(`フォロワー「${deckCard.followerId}」が見つかりません`);
+                            return {
+                                id: `hand_${player.id}_initial_${index}`,
+                                roomPlayerId: player.id,
+                                cardId: deckCard.followerId,
+                                cost: follower.cost,
+                                attack: follower.attack,
+                                hp: follower.hp,
+                            };
+                        });
+
+                        mockHands.push(...newHandCards);
+                        console.log(`Initial hand drawn for player ${user.name}: ${newHandCards.length} cards`);
+                    }
                 } catch (error) {
                     console.error(`Failed to draw initial hand for player ${user.name}:`, error);
+                }
+            }
+        }
+
+        // 最初のプレイヤーのターン開始処理を自動実行
+        const firstActivePlayer = getActivePlayer(room);
+        if (firstActivePlayer) {
+            const firstUser = mockUsers.find(u => u.id === firstActivePlayer.userId);
+            if (firstUser) {
+                console.log(`★ StartGame: Auto-starting first turn for player ${firstUser.name}`);
+
+                // ターン開始時の処理を直接実行
+                const firstPlayer = getPlayerByUserIdAndRoomId(firstUser.id, input.roomId);
+                if (firstPlayer && firstPlayer.selectedDeckId) {
+                    const deckCards = getDeckCardsByDeckId(firstPlayer.selectedDeckId);
+                    if (deckCards.length > 0) {
+                        const shuffledCards = [...deckCards].sort(() => Math.random() - 0.5);
+                        const selectedCard = shuffledCards[0];
+
+                        if (selectedCard) {
+                            const follower = getFollowerById(selectedCard.followerId);
+                            if (follower) {
+                                const newHandCard: MockHand = {
+                                    id: `hand_${firstPlayer.id}_${Date.now()}_first_turn_draw`,
+                                    roomPlayerId: firstPlayer.id,
+                                    cardId: selectedCard.followerId,
+                                    cost: follower.cost,
+                                    attack: follower.attack,
+                                    hp: follower.hp,
+                                };
+
+                                mockHands.push(newHandCard);
+                                console.log(`★ FIRST TURN START: Player ${firstUser.name} drew 1 card (${follower.name}) at first turn start`);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -243,11 +294,15 @@ export const mockApi = {
 
     // ターン開始時のPP回復
     startTurn: async (input: StartTurnInput): Promise<MockRoomPlayer | null> => {
+        console.log(`★ startTurn called for player ${input.currentUser.name} in room ${input.roomId}`);
+
         const room = getRoomById(input.roomId);
         if (!room) return null;
 
         const player = getPlayerByUserIdAndRoomId(input.currentUser.id, input.roomId);
         if (!player) return null;
+
+        console.log(`★ Found player:`, { id: player.id, userId: player.userId, selectedDeckId: player.selectedDeckId });
 
         const roomPlayers = getPlayersByRoomId(input.roomId);
         const playerIndex = roomPlayers.findIndex((p: MockRoomPlayer) => p.userId === input.currentUser.id);
@@ -255,6 +310,47 @@ export const mockApi = {
         const playerTurn = calculatePlayerTurn(room, playerIndex);
         player.turn = playerTurn;
         recoverPlayerPP(player);
+
+        // ターン開始時に1枚ドロー
+        try {
+            if (!player.selectedDeckId) {
+                console.log(`Player ${input.currentUser.name} has no selected deck, skipping draw`);
+            } else {
+                const deckCards = getDeckCardsByDeckId(player.selectedDeckId);
+                if (deckCards.length === 0) {
+                    console.log(`Player ${input.currentUser.name} has no cards in deck ${player.selectedDeckId}, skipping draw`);
+                } else {
+                    // ランダムに1枚選択
+                    const shuffledCards = [...deckCards].sort(() => Math.random() - 0.5);
+                    const selectedCard = shuffledCards[0];
+
+                    if (selectedCard) {
+                        const follower = getFollowerById(selectedCard.followerId);
+                        if (follower) {
+                            const newHandCard: MockHand = {
+                                id: `hand_${player.id}_${Date.now()}_turn_draw`,
+                                roomPlayerId: player.id,
+                                cardId: selectedCard.followerId,
+                                cost: follower.cost,
+                                attack: follower.attack,
+                                hp: follower.hp,
+                            };
+
+                            // 手札に直接追加
+                            mockHands.push(newHandCard);
+
+                            console.log(`★ TURN START: Player ${input.currentUser.name} drew 1 card (${follower.name})`);
+                            console.log(`★ New hand card:`, newHandCard);
+                            console.log(`★ Total mockHands now:`, mockHands.length);
+                            console.log(`★ Player hands now:`, mockHands.filter(h => h.roomPlayerId === player.id).length);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Failed to draw card at turn start for player ${input.currentUser.name}:`, error);
+            // ドローに失敗してもターン開始は継続
+        }
 
         return player;
     },
@@ -275,7 +371,55 @@ export const mockApi = {
 
         if (!player1 || !player2) return room;
 
+        console.log(`★ EndTurn: Player ${input.currentUser.name} is ending their turn`);
+
         switchTurns(room, activePlayer);
+
+        // 次のターンのプレイヤーのターン開始処理を自動実行
+        const newActivePlayer = getActivePlayer(room);
+        if (newActivePlayer) {
+            const nextUser = mockUsers.find(u => u.id === newActivePlayer.userId);
+            if (nextUser) {
+                console.log(`★ EndTurn: Auto-starting turn for next player ${nextUser.name}`);
+
+                // ターン開始時の処理を直接実行（循環参照回避のため）
+                const nextPlayer = getPlayerByUserIdAndRoomId(nextUser.id, input.roomId);
+                if (nextPlayer) {
+                    const roomPlayersForNext = getPlayersByRoomId(input.roomId);
+                    const nextPlayerIndex = roomPlayersForNext.findIndex((p: MockRoomPlayer) => p.userId === nextUser.id);
+                    const nextPlayerTurn = calculatePlayerTurn(room, nextPlayerIndex);
+                    nextPlayer.turn = nextPlayerTurn;
+                    recoverPlayerPP(nextPlayer);
+
+                    // ターン開始時に1枚ドロー
+                    if (nextPlayer.selectedDeckId) {
+                        const deckCards = getDeckCardsByDeckId(nextPlayer.selectedDeckId);
+                        if (deckCards.length > 0) {
+                            const shuffledCards = [...deckCards].sort(() => Math.random() - 0.5);
+                            const selectedCard = shuffledCards[0];
+
+                            if (selectedCard) {
+                                const follower = getFollowerById(selectedCard.followerId);
+                                if (follower) {
+                                    const newHandCard: MockHand = {
+                                        id: `hand_${nextPlayer.id}_${Date.now()}_turn_draw`,
+                                        roomPlayerId: nextPlayer.id,
+                                        cardId: selectedCard.followerId,
+                                        cost: follower.cost,
+                                        attack: follower.attack,
+                                        hp: follower.hp,
+                                    };
+
+                                    mockHands.push(newHandCard);
+                                    console.log(`★ TURN START AUTO: Player ${nextUser.name} drew 1 card (${follower.name}) at turn start`);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return room;
     },
 
@@ -327,7 +471,55 @@ export const mockApi = {
             throw new Error('プレイヤーが不足しています');
         }
 
+        console.log(`★ ForceEndOpponentTurn: Forcing end turn for player ${activePlayer ? mockUsers.find(u => u.id === activePlayer.userId)?.name : 'Unknown'}`);
+
         switchTurns(room, activePlayer);
+
+        // 次のターンのプレイヤーのターン開始処理を自動実行（endTurnと同様）
+        const newActivePlayer = getActivePlayer(room);
+        if (newActivePlayer) {
+            const nextUser = mockUsers.find(u => u.id === newActivePlayer.userId);
+            if (nextUser) {
+                console.log(`★ ForceEndOpponentTurn: Auto-starting turn for next player ${nextUser.name}`);
+
+                // ターン開始時の処理を直接実行
+                const nextPlayer = getPlayerByUserIdAndRoomId(nextUser.id, input.roomId);
+                if (nextPlayer) {
+                    const roomPlayersForNext = getPlayersByRoomId(input.roomId);
+                    const nextPlayerIndex = roomPlayersForNext.findIndex((p: MockRoomPlayer) => p.userId === nextUser.id);
+                    const nextPlayerTurn = calculatePlayerTurn(room, nextPlayerIndex);
+                    nextPlayer.turn = nextPlayerTurn;
+                    recoverPlayerPP(nextPlayer);
+
+                    // ターン開始時に1枚ドロー
+                    if (nextPlayer.selectedDeckId) {
+                        const deckCards = getDeckCardsByDeckId(nextPlayer.selectedDeckId);
+                        if (deckCards.length > 0) {
+                            const shuffledCards = [...deckCards].sort(() => Math.random() - 0.5);
+                            const selectedCard = shuffledCards[0];
+
+                            if (selectedCard) {
+                                const follower = getFollowerById(selectedCard.followerId);
+                                if (follower) {
+                                    const newHandCard: MockHand = {
+                                        id: `hand_${nextPlayer.id}_${Date.now()}_force_turn_draw`,
+                                        roomPlayerId: nextPlayer.id,
+                                        cardId: selectedCard.followerId,
+                                        cost: follower.cost,
+                                        attack: follower.attack,
+                                        hp: follower.hp,
+                                    };
+
+                                    mockHands.push(newHandCard);
+                                    console.log(`★ FORCE TURN START: Player ${nextUser.name} drew 1 card (${follower.name}) at forced turn start`);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return room;
     },
 
@@ -399,12 +591,13 @@ export const mockApi = {
             };
         });
 
-        // 既存の手札と合わせて更新
-        const currentHands = getHandsByRoomPlayerId(player.id);
-        const updatedHands = [...mockHands.filter(hand => hand.roomPlayerId !== player.id), ...currentHands, ...newHandCards];
-        updateMockHands(updatedHands);
+        // 手札に直接追加
+        mockHands.push(...newHandCards);
 
-        console.log(`Player ${input.currentUser.name} drew ${count} cards from deck ${player.selectedDeckId}`);
+        console.log(`★ MANUAL DRAW: Player ${input.currentUser.name} drew ${count} cards from deck ${player.selectedDeckId}`);
+        console.log(`★ New hand cards:`, newHandCards);
+        console.log(`★ Total mockHands now:`, mockHands.length);
+        console.log(`★ Player hands now:`, mockHands.filter(h => h.roomPlayerId === player.id).length);
         return newHandCards;
     },
 
@@ -414,7 +607,15 @@ export const mockApi = {
         if (!player) throw new Error('プレイヤーが見つかりません');
 
         const hands = getHandsByRoomPlayerId(player.id);
-        console.log(`Getting hand for player ${input.currentUser.name}:`, hands);
+
+        // 現在のアクティブプレイヤーも表示
+        const room = getRoomById(input.roomId);
+        const activePlayer = room ? getActivePlayer(room) : null;
+        const activeUser = activePlayer ? mockUsers.find(u => u.id === activePlayer.userId) : null;
+
+        console.log(`★ Getting hand for player ${input.currentUser.name} (playerId: ${player.id}):`, hands.length, 'cards');
+        console.log(`★ Current active player: ${activeUser ? activeUser.name : 'None'}`);
+        console.log(`★ Hand details:`, hands.map(h => ({ id: h.id, cardId: h.cardId })));
         return hands;
     },
 };

@@ -21,10 +21,12 @@ export function HandDisplay({ room, currentUser }: HandDisplayProps) {
         try {
             setIsLoading(true);
             setError(null);
+            console.log(`★ HandDisplay: Loading hand for user ${currentUser.name} in room ${room.id}`);
             const handCards = await mockApi.getHand({
                 roomId: room.id,
                 currentUser
             });
+            console.log(`★ HandDisplay: Received ${handCards.length} cards:`, handCards);
             setHand(handCards);
         } catch (err) {
             setError(err instanceof Error ? err.message : '手札の取得に失敗しました');
@@ -35,12 +37,31 @@ export function HandDisplay({ room, currentUser }: HandDisplayProps) {
 
     useEffect(() => {
         loadHand();
+
+        // 定期的に手札を更新（デバッグ用）
+        const interval = setInterval(() => {
+            loadHand();
+        }, 500); // 0.5秒ごとに更新（ターン開始時の即座の反映のため）
+
+        // ターン開始イベントリスナーを追加
+        const handleTurnStart = () => {
+            console.log('★ HandDisplay: Received turn start event, reloading hand');
+            loadHand();
+        };
+
+        window.addEventListener('turnStarted', handleTurnStart);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('turnStarted', handleTurnStart);
+        };
     }, [room.id, currentUser.id]);
 
     // デバッグ用: 手動でドロー
     const handleDrawCards = async () => {
         setIsDrawing(true);
         try {
+            console.log(`★ HandDisplay: Manual draw for user ${currentUser.name} in room ${room.id}`);
             await mockApi.drawCards({
                 roomId: room.id,
                 currentUser,
@@ -71,6 +92,24 @@ export function HandDisplay({ room, currentUser }: HandDisplayProps) {
             borderRadius: '5px'
         }}>
             <h4>手札 ({hand.length}枚)</h4>
+
+            {/* 手札リロードボタン */}
+            <button
+                onClick={loadHand}
+                disabled={isLoading}
+                style={{
+                    marginRight: '10px',
+                    marginBottom: '10px',
+                    padding: '5px 10px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '3px',
+                    cursor: isLoading ? 'not-allowed' : 'pointer'
+                }}
+            >
+                {isLoading ? '更新中...' : '手札を更新'}
+            </button>
 
             {/* デバッグ用ドローボタン */}
             <button
