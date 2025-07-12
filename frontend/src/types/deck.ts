@@ -23,6 +23,13 @@ export interface DeckWithCards extends Deck {
   DeckCards: DeckCard[];
 }
 
+// カードのグループ化用の型
+export interface GroupedDeckCard {
+  follower: Follower;
+  cards: DeckCard[];
+  count: number;
+}
+
 // zodスキーマから型をエクスポート
 export type CreateDeckInput = CreateDeckData;
 export type UpdateDeckInput = UpdateDeckData;
