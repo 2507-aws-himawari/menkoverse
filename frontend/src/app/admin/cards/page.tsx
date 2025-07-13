@@ -92,7 +92,7 @@ export default function AdminCardsPage() {
 					<input
 						id="attack"
 						type="number"
-						min={1}
+						min={0}
 						max={100}
 						{...register("attack", { valueAsNumber: true })}
 					/>

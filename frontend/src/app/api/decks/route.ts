@@ -30,7 +30,24 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(decks);
+    const rentalDecks = await db.rentalDeck.findMany({
+      include: {
+        RentalDeckCards: {
+          include: {
+            follower: true,
+          },
+        },
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    const allDecks = [...decks, ...rentalDecks];
+
+    console.log("GET /api/decks - デッキ一覧:", allDecks);
+
+    return NextResponse.json(allDecks);
   } catch (error) {
     console.error("デッキ一覧取得エラー:", error);
     return NextResponse.json(
