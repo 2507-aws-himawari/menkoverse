@@ -4,3 +4,26 @@
 	--font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
 		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
+
+/* 横画面用のスタイル */
+html, body {
+	height: 100vh;
+	overflow: hidden;
+}
+
+@media (orientation: landscape) {
+	html, body {
+		height: 100dvh; /* Dynamic viewport height */
+		width: 100vw;
+	}
+	
+	/* スマホ横画面での表示最適化 */
+	.landscape-optimized {
+		height: 100dvh;
+		width: 100vw;
+		overflow: hidden;
+		position: fixed;
+		top: 0;
+		left: 0;
+	}
+}
