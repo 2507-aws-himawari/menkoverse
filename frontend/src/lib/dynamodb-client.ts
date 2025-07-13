@@ -1,15 +1,11 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { fromIni } from '@aws-sdk/credential-providers';
 import type { CreateRoomRequest, CreateRoomResponse, JoinRoomRequest, JoinRoomResponse } from '@/types/game';
 import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
 
 // DynamoDB client configuration
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'ap-northeast-1',
-  credentials: process.env.AWS_PROFILE 
-    ? fromIni({ profile: process.env.AWS_PROFILE })
-    : undefined,
 });
 
 const docClient = DynamoDBDocumentClient.from(client);

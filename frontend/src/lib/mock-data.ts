@@ -1,6 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
-import { fromIni } from '@aws-sdk/credential-providers';
 
 // Mock data for testing when AWS is not available
 let mockRooms = [
@@ -47,9 +46,6 @@ export async function checkAWSAvailability(): Promise<boolean> {
     
     const client = new DynamoDBClient({
       region: process.env.AWS_REGION || 'ap-northeast-1',
-      credentials: process.env.AWS_PROFILE 
-        ? fromIni({ profile: process.env.AWS_PROFILE })
-        : undefined, // Use default credential chain
     });
     
     const docClient = DynamoDBDocumentClient.from(client);
