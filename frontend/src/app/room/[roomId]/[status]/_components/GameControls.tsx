@@ -1,5 +1,7 @@
 import { getUserById, getActivePlayer, calculatePPMax } from '@/lib/gameLogic';
-import { mockUsers, getPlayersByRoomId, getPlayerByUserIdAndRoomId } from '@/lib/mockData';
+import { mockUsers, getPlayerByUserIdAndRoomId } from '@/lib/mockData';
+import { useAtom } from 'jotai';
+import { roomPlayersAtom } from '@/lib/atoms';
 import type { MockRoom, MockRoomPlayer, MockUser } from '@/lib/types';
 
 interface GameControlsProps {
@@ -33,8 +35,9 @@ export function GameControls({
     const activeUser = activePlayer ? getUserById(activePlayer.userId, mockUsers) : null;
     const isActiveUser = activePlayer?.userId === currentUser.id;
 
-    // プレイヤー情報を取得
-    const roomPlayers = getPlayersByRoomId(room.id);
+    // Atomからプレイヤー情報を取得
+    const [roomPlayers] = useAtom(roomPlayersAtom);
+    console.log("Room Players from Atom:", roomPlayers);
 
     return (
         <div>
@@ -92,8 +95,8 @@ function ActivePlayerControls({
     const currentTurn = currentPlayer?.turn || 1;
     const ppMax = calculatePPMax(currentTurn);
 
-    // 相手プレイヤーを取得
-    const roomPlayers = getPlayersByRoomId(room.id);
+    // Atomから相手プレイヤーを取得
+    const [roomPlayers] = useAtom(roomPlayersAtom);
     const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
 
     return (
@@ -125,8 +128,8 @@ function InactivePlayerControls({
     onForceEndOpponentTurn,
     onSummonFollowerToOpponent
 }: InactivePlayerControlsProps) {
-    // 相手プレイヤーを取得
-    const roomPlayers = getPlayersByRoomId(room.id);
+    // Atomから相手プレイヤーを取得
+    const [roomPlayers] = useAtom(roomPlayersAtom);
     const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
 
     const handleSummonOpponentFollower = async (followerId: string) => {

@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { MockUser, MockRoom } from './types';
+import type { MockUser, MockRoom, MockRoomPlayer } from './types';
 import { mockUsers } from './mockData';
 
 // ユーザー
@@ -7,6 +7,9 @@ export const currentUserAtom = atom<MockUser>(mockUsers[0]!);
 
 // 部屋
 export const currentRoomAtom = atom<MockRoom | null>(null);
+
+// 部屋のプレイヤー一覧
+export const roomPlayersAtom = atom<MockRoomPlayer[]>([]);
 
 // ローディング
 export const loadingAtom = atom<boolean>(false);
@@ -58,5 +61,20 @@ export const setErrorAndEndLoadingAtom = atom(
     (get, set, error: string) => {
         set(errorAtom, error);
         set(loadingAtom, false);
+    }
+);
+
+// Room Players管理用のAtom
+export const setRoomPlayersAtom = atom(
+    null,
+    (get, set, players: MockRoomPlayer[]) => {
+        set(roomPlayersAtom, players);
+    }
+);
+
+export const clearRoomPlayersAtom = atom(
+    null,
+    (get, set) => {
+        set(roomPlayersAtom, []);
     }
 );

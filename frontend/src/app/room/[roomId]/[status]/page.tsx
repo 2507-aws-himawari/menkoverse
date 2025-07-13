@@ -1,13 +1,31 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useAtom } from 'jotai';
 import { useRoomData, useGameActions } from './_hooks';
 import { RoomDisplay, GameControls } from './_components';
+import { setRoomPlayersAtom, clearRoomPlayersAtom } from '@/lib/atoms';
+import { getPlayersByRoomId } from '@/lib/mockData';
 
 export default function RoomStatusPage() {
     const router = useRouter();
     const { room, loading, error, currentUser, clearError } = useRoomData();
     const gameActions = useGameActions();
+    const [, setRoomPlayers] = useAtom(setRoomPlayersAtom);
+    const [, clearRoomPlayers] = useAtom(clearRoomPlayersAtom);
+
+    // room情報が変更されたらroomPlayersを更新
+    useEffect(() => {
+        console.log("uoooo")
+        if (room) {
+            const players = getPlayersByRoomId(room.id);
+            setRoomPlayers(players);
+            console.log("Updated Room Players:", players);
+        } else {
+            clearRoomPlayers();
+        }
+    }, [room, setRoomPlayers, clearRoomPlayers]);
 
     if (error && !room) {
         return (
