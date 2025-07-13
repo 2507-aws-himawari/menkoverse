@@ -1,26 +1,213 @@
 import { getUserById, getActivePlayer, calculatePPMax } from '@/lib/gameLogic';
 import { GAME_CONSTANTS } from '@/lib/constants';
-import { mockUsers, getPlayersByRoomId } from '@/lib/mockData';
+import { mockUsers, getPlayersByRoomId, getDeckById } from '@/lib/mockData';
+import { mockApi } from '@/lib/mockApi';
 import type { MockRoom, MockRoomPlayer } from '@/lib/types';
+import type { RoomMember } from '@/types/game';
 import { useRouter } from 'next/navigation';
+import { useAtom } from 'jotai';
+import { currentUserAtom } from '@/lib/atoms';
+import { useState, useEffect } from 'react';
+import { DeckSelector } from './DeckSelector';
+import { HandDisplay } from './HandDisplay';
+import { BoardDisplay } from './BoardDisplay';
+import { useGameActions } from '../_hooks/useGameActions';
+import { useGameWebSocket } from '@/hooks/useGameWebSocket';
 
 interface RoomDisplayProps {
     room: MockRoom;
 }
 
 export function RoomDisplay({ room }: RoomDisplayProps) {
-    // プレイヤー情報を取得
     const roomPlayers = getPlayersByRoomId(room.id);
     const router = useRouter();
+    const [currentUser] = useAtom(currentUserAtom);
+    const [isStartingGame, setIsStartingGame] = useState(false);
+    const [, forceUpdate] = useState({});
+    const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
+    
+    // 固定のplayerIdを使用（再レンダリング時に変わらないように）
+    const [stablePlayerId] = useState(() => `player_${currentUser.id}_${Date.now()}`);
+
+    // 参加者管理のためのstate
+    const [roomMembers, setRoomMembers] = useState<RoomMember[]>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+
+    // 参加者一覧を取得する関数
+    const fetchRoomMembers = async () => {
+        if (room.status !== 'waiting') return; // waiting状態でのみ参加者同期
+        
+        setMembersLoading(true);
+        try {
+            const response = await fetch(`/api/rooms/${encodeURIComponent(room.id)}/members`);
+            if (response.ok) {
+                const data = await response.json();
+                setRoomMembers(data.members || []);
+                console.log('Room members updated:', data.members);
+            } else {
+                console.error('Failed to fetch room members');
+            }
+        } catch (error) {
+            console.error('Error fetching room members:', error);
+        } finally {
+            setMembersLoading(false);
+        }
+    };
+
+    // WebSocket接続でプレイヤー参加イベントを監視（接続失敗時は無効化）
+    const { playerJoinEvents, isConnected, error } = useGameWebSocket(
+        room.id, 
+        stablePlayerId
+    );
+
+    // 初回ロード時と部屋状態変更時に参加者を取得
+    useEffect(() => {
+        fetchRoomMembers();
+    }, [room.id, room.status]);
+
+    // プレイヤー参加イベントを監視してUIを更新
+    useEffect(() => {
+        if (playerJoinEvents.length > 0) {
+            const latestEvent = playerJoinEvents[playerJoinEvents.length - 1];
+            console.log('New player joined:', latestEvent);
+            // 参加者リストを再取得
+            fetchRoomMembers();
+            // 画面を再描画してプレイヤーリストを更新
+            forceUpdate({});
+        }
+    }, [playerJoinEvents]);
+
+    const {
+        handleSummonFollower: originalHandleSummonFollower,
+        handleAttackWithFollower: originalHandleAttackWithFollower,
+        handleSummonFollowerToOpponent: originalHandleSummonFollowerToOpponent
+    } = useGameActions();
+
+    // フォロワー召喚後にボードを更新
+    const handleSummonFollower = async (handCardId: string) => {
+        await originalHandleSummonFollower(handCardId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
+
+    // 相手フィールドにフォロワー召喚後にボードを更新
+    const handleSummonFollowerToOpponent = async (targetUserId: string, followerId: string) => {
+        await originalHandleSummonFollowerToOpponent(targetUserId, followerId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
+
+    // フォロワー攻撃後にボードを更新
+    const handleAttackWithFollower = async (
+        attackerBoardCardId: string,
+        targetType: 'follower' | 'player',
+        targetId: string
+    ) => {
+        await originalHandleAttackWithFollower(attackerBoardCardId, targetType, targetId);
+        setBoardRefreshTrigger(prev => prev + 1);
+        refreshData();
+    };
+
+    const refreshData = () => {
+        forceUpdate({});
+    };
 
     const handleBackHome = () => {
         router.push('/home');
     };
+
+    const handleStartGame = async () => {
+        setIsStartingGame(true);
+        try {
+            const updatedRoom = await mockApi.startGame({
+                roomId: room.id,
+                currentUser
+            });
+
+            if (updatedRoom) {
+                const newUrl = `/room/${encodeURIComponent(room.id)}/${updatedRoom.status}`;
+                router.push(newUrl);
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'ゲーム開始に失敗しました');
+        } finally {
+            setIsStartingGame(false);
+        }
+    };
+
+    const handleDemoStartGame = async () => {
+        setIsStartingGame(true);
+        try {
+            const updatedRoom = await mockApi.startGame({
+                roomId: room.id,
+                currentUser,
+                isDemo: true
+            });
+
+            if (updatedRoom) {
+                const newUrl = `/room/${encodeURIComponent(room.id)}/${updatedRoom.status}`;
+                router.push(newUrl);
+            }
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'ゲーム開始に失敗しました');
+        } finally {
+            setIsStartingGame(false);
+        }
+    };
+
     const Turn = roomPlayers.length > 0 ? Math.max(...roomPlayers.map(p => p.turn)) : 1;
 
     return (
         <div>
             <h1>ゲームルーム</h1>
+            
+            {/* WebSocket接続状態表示 */}
+            {error && (
+                <div style={{ 
+                    backgroundColor: '#fff3cd', 
+                    border: '1px solid #ffc107', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#856404'
+                }}>
+                    ⚠️ リアルタイム通知: {error}
+                </div>
+            )}
+            
+            {isConnected && (
+                <div style={{ 
+                    backgroundColor: '#d4edda', 
+                    border: '1px solid #28a745', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#155724'
+                }}>
+                    ✅ リアルタイム通知: 接続中
+                </div>
+            )}
+            
+            {/* プレイヤー参加通知 */}
+            {playerJoinEvents.length > 0 && (
+                <div style={{ 
+                    backgroundColor: '#e8f5e8', 
+                    border: '1px solid #4CAF50', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                }}>
+                    {playerJoinEvents.map((event, index) => (
+                        <div key={index}>
+                            ✓ プレイヤーが参加しました: {event.userId}
+                        </div>
+                    ))}
+                </div>
+            )}
+            
             <div style={{ fontSize: '20px' }}>ターン: {Turn}</div>
             <div>
                 {roomPlayers.map((player: MockRoomPlayer, index: number) => {
@@ -30,6 +217,9 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     const activePlayer = getActivePlayer(room);
                     const isActivePlayer = activePlayer?.userId === player.userId;
                     const playerPosition = index === 0 ? '先攻' : '後攻';
+
+                    // デッキ情報を取得
+                    const selectedDeck = player.selectedDeckId ? getDeckById(player.selectedDeckId) : null;
 
                     return (
                         <div key={player.id}>
@@ -51,6 +241,17 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                 <div>
                                     <span>HP: {player.hp}/{GAME_CONSTANTS.MAX_HP}</span>
                                     <p>PP: {player.pp}/{calculatePPMax(player.turn)}</p>
+
+                                    {/* デッキ情報表示 */}
+                                    {room.status === 'waiting' && (
+                                        <p>
+                                            デッキ: {player.selectedDeckId ? (
+                                                <span style={{ color: 'green' }}>選択済み</span>
+                                            ) : (
+                                                <span style={{ color: 'orange' }}>未選択</span>
+                                            )}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -73,10 +274,129 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     <div>
                         <h2>プレイヤー待機中</h2>
                         <div>
-                            <p>参加者: {roomPlayers.length}/2</p>
                             {roomPlayers.length < 2 && (
                                 <p>もう1人のプレイヤーを待っています...</p>
                             )}
+
+                            {/* リアルタイム参加者同期情報 */}
+                            {room.status === 'waiting' && (
+                                <div style={{ 
+                                    marginTop: '10px',
+                                    padding: '10px',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '4px',
+                                    fontSize: '14px'
+                                }}>
+                                    <h3>リアルタイム参加者情報</h3>
+                                    {membersLoading ? (
+                                        <p>参加者情報を読み込み中...</p>
+                                    ) : (
+                                        <div>
+                                            <p>接続中の参加者: {roomMembers.length}人</p>
+                                            {roomMembers.map((member, index) => {
+                                                const user = mockUsers.find(u => u.id === member.userId);
+                                                return (
+                                                    <div key={member.playerId} style={{ margin: '5px 0' }}>
+                                                        • {user?.name || member.userId} 
+                                                        <span style={{ color: '#666', fontSize: '12px' }}>
+                                                            （{new Date(member.joinedAt).toLocaleTimeString()}参加）
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                            {roomMembers.length === 0 && (
+                                                <p style={{ color: '#666' }}>まだ参加者がいません</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* 現在のユーザーのデッキ選択 */}
+                            {(() => {
+                                const currentPlayer = roomPlayers.find(p => p.userId === currentUser.id);
+                                if (currentPlayer) {
+                                    return (
+                                        <DeckSelector
+                                            room={room}
+                                            currentUser={currentUser}
+                                            currentPlayer={currentPlayer}
+                                            onDeckSelected={refreshData}
+                                        />
+                                    );
+                                }
+                                return null;
+                            })()}
+
+                            {roomPlayers.length === 2 && room.ownerId === currentUser.id && (
+                                <div>
+                                    <p>プレイヤーが揃いました！</p>
+                                    <button
+                                        onClick={handleStartGame}
+                                        disabled={isStartingGame}
+                                        style={{
+                                            padding: '10px 20px',
+                                            fontSize: '16px',
+                                            backgroundColor: '#4CAF50',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '5px',
+                                            cursor: isStartingGame ? 'not-allowed' : 'pointer',
+                                            opacity: isStartingGame ? 0.6 : 1
+                                        }}
+                                    >
+                                        {isStartingGame ? 'ゲーム開始中...' : 'ゲーム開始'}
+                                    </button>
+                                </div>
+                            )}
+                            {roomPlayers.length === 2 && room.ownerId !== currentUser.id && (
+                                <div>
+                                    <p>ホストがゲームを開始するまでお待ちください...</p>
+                                    <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
+                                        <p style={{ fontSize: '12px', color: '#666', margin: '0 0 10px 0' }}>
+                                            デモ用: ホストが開始したことにして進める
+                                        </p>
+                                        <button
+                                            onClick={handleDemoStartGame}
+                                            disabled={isStartingGame}
+                                            style={{
+                                                padding: '8px 16px',
+                                                fontSize: '14px',
+                                                backgroundColor: '#FF9800',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '5px',
+                                                cursor: isStartingGame ? 'not-allowed' : 'pointer',
+                                                opacity: isStartingGame ? 0.6 : 1
+                                            }}
+                                        >
+                                            {isStartingGame ? 'ゲーム開始中...' : 'ホストが開始したことにする'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {room.status === 'playing' && (
+                    <div>
+                        {/* バトルフィールド（ボード）を表示 */}
+                        <div style={{ marginTop: '20px' }}>
+                            <BoardDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                refreshTrigger={boardRefreshTrigger}
+                                onAttackWithFollower={handleAttackWithFollower}
+                            />
+                        </div>
+                        {/* 現在のユーザーの手札を表示 */}
+                        <div style={{ marginTop: '20px' }}>
+                            <HandDisplay
+                                room={room}
+                                currentUser={currentUser}
+                                onSummonFollower={handleSummonFollower}
+                            />
                         </div>
                     </div>
                 )}

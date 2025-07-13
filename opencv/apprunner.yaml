@@ -1,0 +1,23 @@
+version: 1.0
+runtime: python311
+build:
+  commands:
+    build:
+      - echo "Starting build process"
+      - python3 --version
+      - pip3 --version
+      - pip3 install --upgrade pip
+      - pip3 install --no-cache-dir -r requirements.txt
+      - echo "Build completed successfully"
+run:
+  runtime-version: 3.11
+  command: python3 main.py
+  network:
+    port: 5000
+  env:
+    - name: ENVIRONMENT
+      value: dev
+    - name: PYTHONUNBUFFERED
+      value: "1"
+    - name: PIP_NO_CACHE_DIR
+      value: "1"

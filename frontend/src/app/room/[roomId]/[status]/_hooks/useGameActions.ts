@@ -74,6 +74,71 @@ export function useGameActions() {
         });
     };
 
+    const handleSummonFollower = async (handCardId: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const errorMessage = await gameActions.handleSummonFollower(currentUser, handCardId);
+
+            if (errorMessage) {
+                // エラーメッセージがある場合はエラーとして設定
+                setError(errorMessage);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : '召喚に失敗しました';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAttackWithFollower = async (
+        attackerBoardCardId: string,
+        targetType: 'follower' | 'player',
+        targetId: string
+    ) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const errorMessage = await gameActions.handleAttackWithFollower(
+                currentUser,
+                attackerBoardCardId,
+                targetType,
+                targetId
+            );
+
+            if (errorMessage) {
+                setError(errorMessage);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : '攻撃に失敗しました';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSummonFollowerToOpponent = async (targetUserId: string, followerId: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            const errorMessage = await gameActions.handleSummonFollowerToOpponent(
+                currentUser,
+                targetUserId,
+                followerId
+            );
+
+            if (errorMessage) {
+                setError(errorMessage);
+            }
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : '相手フィールドへの召喚に失敗しました';
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         handleStartTurn,
         handleEndTurn,
@@ -82,5 +147,8 @@ export function useGameActions() {
         handleDamagePlayer,
         handleDamageToSelf,
         handleDamageToOpponent,
+        handleSummonFollower,
+        handleAttackWithFollower,
+        handleSummonFollowerToOpponent,
     };
 }

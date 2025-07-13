@@ -18,9 +18,9 @@ export function useRoomData() {
     const [, setError] = useAtom(errorAtom);
 
     useEffect(() => {
-        if (room && room.status !== status) {
+        if (room && status && room.status !== status) {
             const newUrl = `/room/${encodeURIComponent(roomId)}/${room.status}`;
-            router.replace(newUrl);
+            router.push(newUrl);
         }
     }, [room, status, roomId, router]);
 

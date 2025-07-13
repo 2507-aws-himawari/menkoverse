@@ -1,15 +1,11 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import { fromIni } from '@aws-sdk/credential-providers';
-import type { CreateRoomRequest, CreateRoomResponse } from '@/types/game';
-import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
+import type { CreateRoomRequest, CreateRoomResponse, JoinRoomRequest, JoinRoomResponse, RoomMember } from '@/types/game';
+import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom, getMockRoomMembers, addMockRoomMember } from './mock-data';
 
 // DynamoDB client configuration
 const client = new DynamoDBClient({
   region: process.env.AWS_REGION || 'ap-northeast-1',
-  credentials: process.env.AWS_PROFILE 
-    ? fromIni({ profile: process.env.AWS_PROFILE })
-    : undefined,
 });
 
 const docClient = DynamoDBDocumentClient.from(client);
@@ -238,4 +234,121 @@ export async function deleteRoom(roomId: string): Promise<void> {
   }
 }
 
-export { mockRooms };
+// 部屋参加（最小限実装）
+export async function joinRoom(roomId: string, request: JoinRoomRequest): Promise<JoinRoomResponse> {
+  console.log('joinRoom called with:', { roomId, request });
+  
+  const awsAvailable = await checkAWSAvailability();
+  console.log('AWS availability check result:', awsAvailable);
+  
+  if (!awsAvailable) {
+    console.log('AWS not available, simulating room join');
+    const mockRoom = getMockRoom(roomId);
+    if (!mockRoom) {
+      throw new Error(`部屋が見つかりません: ${roomId}`);
+    }
+    
+    if (mockRoom.status !== 'waiting') {
+      throw new Error(`この部屋は参加できません (状態: ${mockRoom.status})`);
+    }
+
+    // モック環境でも参加者データを管理
+    addMockRoomMember({
+      playerId: request.playerId,
+      userId: request.userId,
+      roomId,
+      joinedAt: Date.now(),
+      isActive: true
+    });
+
+    // モックデータでは簡単な検証のみ実装
+    return {
+      success: true,
+      roomId,
+      playerId: request.playerId
+    };
+  }
+
+  console.log('AWS is available, proceeding with DynamoDB operations');
+  
+  try {
+    // 部屋の存在確認
+    const room = await getRoomById(roomId);
+    if (!room) {
+      throw new Error(`部屋が見つかりません: ${roomId}`);
+    }
+
+    if (room.status !== 'waiting') {
+      throw new Error(`この部屋は参加できません (状態: ${room.status})`);
+    }
+
+    // プレイヤー情報をDynamoDBに保存
+    const timestamp = Date.now();
+    const playerItem = {
+      PK: `ROOM#${roomId}`,
+      SK: `PLAYER#${request.playerId}`,
+      entityType: 'player',
+      playerId: request.playerId,
+      userId: request.userId,
+      roomId,
+      joinedAt: timestamp,
+      isActive: true
+    };
+    
+    console.log('Inserting player item to DynamoDB:', playerItem);
+    
+    await docClient.send(new PutCommand({
+      TableName: getTableName(),
+      Item: playerItem
+    }));
+
+    console.log(`✓ Player ${request.playerId} joined room ${roomId} successfully`);
+    return {
+      success: true,
+      roomId,
+      playerId: request.playerId
+    };
+  } catch (error) {
+    console.error('Error joining room:', error);
+    throw error;
+  }
+}
+
+// ルームの参加者取得（最小限実装）
+export async function getRoomMembers(roomId: string): Promise<RoomMember[]> {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, using mock data for room members');
+    return getMockRoomMembers(roomId);
+  }
+
+  try {
+    const response = await docClient.send(new ScanCommand({
+      TableName: getTableName(),
+      FilterExpression: '#pk = :roomPk AND begins_with(#sk, :playerPrefix)',
+      ExpressionAttributeNames: {
+        '#pk': 'PK',
+        '#sk': 'SK',
+      },
+      ExpressionAttributeValues: {
+        ':roomPk': `ROOM#${roomId}`,
+        ':playerPrefix': 'PLAYER#',
+      },
+    }));
+
+    const members = (response.Items || []).map((item: any) => ({
+      playerId: item.playerId,
+      userId: item.userId,
+      roomId: item.roomId,
+      joinedAt: item.joinedAt,
+      isActive: item.isActive || true,
+    }));
+
+    console.log(`Found ${members.length} members in room ${roomId}`);
+    return members;
+  } catch (error) {
+    console.error('Error getting room members:', error);
+    console.log('Falling back to mock data');
+    return getMockRoomMembers(roomId);
+  }
+}

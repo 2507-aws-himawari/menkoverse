@@ -43,6 +43,22 @@ async function processRecord(record: DynamoDBRecord) {
       return;
     }
     
+    // Handle game start events specifically
+    if (gameEvent.sk === 'METADATA' && record.eventName === 'MODIFY') {
+      const isGameStartEvent = await handleGameStartEvent(gameEvent, record);
+      if (isGameStartEvent) {
+        console.log('Game start event processed');
+        return;
+      }
+    }
+    
+    // Handle player join events specifically
+    if (gameEvent.sk.startsWith('PLAYER#') && record.eventName === 'INSERT') {
+      console.log('Player join event detected:', gameEvent);
+      await handlePlayerJoinEvent(gameEvent);
+      return;
+    }
+    
     console.log('Game event parsed:', gameEvent);
     
     // Get active connections for the room
@@ -177,5 +193,124 @@ async function removeStaleConnection(connectionId: string) {
     }
   } catch (error) {
     console.error('Error removing stale connection:', error);
+  }
+}
+
+async function handlePlayerJoinEvent(gameEvent: any) {
+  try {
+    console.log('Processing player join event:', gameEvent);
+    
+    // Create player join notification
+    const playerJoinNotification = {
+      type: 'PLAYER_JOINED',
+      roomId: gameEvent.roomId,
+      playerId: gameEvent.data.playerId,
+      userId: gameEvent.data.userId,
+      timestamp: gameEvent.timestamp
+    };
+    
+    console.log('Player join notification:', playerJoinNotification);
+    
+    // Get active connections for the room (exclude the joining player's connection)
+    const connections = await getActiveConnections(gameEvent.roomId);
+    console.log(`Found ${connections.length} active connections for room ${gameEvent.roomId}`);
+    
+    // Send to all connected players
+    const sendPromises = connections.map(conn => 
+      sendToConnection(conn.connectionId, playerJoinNotification)
+    );
+    
+    const sendResults = await Promise.allSettled(sendPromises);
+    
+    // Log send results
+    sendResults.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(`Failed to send player join notification to connection ${connections[index].connectionId}:`, result.reason);
+      } else {
+        console.log(`Successfully sent player join notification to connection ${connections[index].connectionId}`);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error handling player join event:', error);
+  }
+}
+
+async function handleGameStartEvent(gameEvent: any, record: DynamoDBRecord): Promise<boolean> {
+  try {
+    const { dynamodb: db } = record;
+    
+    // Check if this is a room status change
+    if (!db?.OldImage || !db?.NewImage) {
+      return false;
+    }
+    
+    const oldStatus = db.OldImage.status?.S;
+    const newStatus = db.NewImage.status?.S;
+    
+    // Detect game start: waiting -> playing
+    if (oldStatus === 'waiting' && newStatus === 'playing') {
+      console.log(`Game start detected for room ${gameEvent.roomId}`);
+      
+      // Create game start notification
+      const gameStartNotification = {
+        type: 'GAME_STARTED',
+        roomId: gameEvent.roomId,
+        timestamp: gameEvent.timestamp,
+        data: {
+          status: newStatus,
+          updatedAt: gameEvent.data.updatedAt
+        }
+      };
+      
+      console.log('Game start notification:', gameStartNotification);
+      
+      // Get active connections for the room
+      const connections = await getActiveConnections(gameEvent.roomId);
+      console.log(`Found ${connections.length} active connections for room ${gameEvent.roomId}`);
+      
+      // Send to all connected players
+      const sendPromises = connections.map(conn => 
+        sendToConnection(conn.connectionId, gameStartNotification)
+      );
+      
+      const sendResults = await Promise.allSettled(sendPromises);
+      
+      // Log send results
+      sendResults.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(`Failed to send game start notification to connection ${connections[index].connectionId}:`, result.reason);
+        } else {
+          console.log(`Successfully sent game start notification to connection ${connections[index].connectionId}`);
+        }
+      });
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error handling game start event:', error);
+    return false;
+  }
+}
+
+async function getActiveConnectionsByPlayerId(playerId: string) {
+  try {
+    const result = await dynamodb.query({
+      TableName: process.env.GAME_TABLE_NAME!,
+      IndexName: 'PlayerIdIndex', // プレイヤーIDでのインデックスを使用
+      KeyConditionExpression: 'PK = :pk',
+      ExpressionAttributeValues: {
+        ':pk': `PLAYER#${playerId}`
+      }
+    }).promise();
+    
+    const connections = result.Items || [];
+    console.log(`Retrieved ${connections.length} connections for player ${playerId}`);
+    return connections;
+  } catch (error) {
+    console.error('Error getting active connections by player ID:', error);
+    return [];
   }
 }

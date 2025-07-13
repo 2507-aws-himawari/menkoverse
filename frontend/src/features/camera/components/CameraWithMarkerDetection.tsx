@@ -11,7 +11,6 @@ interface CameraWithMarkerDetectionProps {
   onStreamReady?: (stream: MediaStream) => void;
   onMarkersDetected?: (markers: DetectedMarker[]) => void;
   markerDetectionEnabled?: boolean;
-  markerDetectionOptions?: Partial<MarkerDetectionOptions>;
   className?: string;
 }
 
@@ -22,7 +21,6 @@ export const CameraWithMarkerDetection: React.FC<CameraWithMarkerDetectionProps>
   onStreamReady,
   onMarkersDetected,
   markerDetectionEnabled = true,
-  markerDetectionOptions = {},
   className = '',
 }) => {
   const { videoRef, isStreaming, error: streamError, startStream, stopStream } = useCameraStream();
@@ -32,7 +30,8 @@ export const CameraWithMarkerDetection: React.FC<CameraWithMarkerDetectionProps>
     detectedMarkers,
     isDetecting,
     error: detectionError,
-    updateOptions,
+    startDetection,
+    stopDetection,
   } = useArUcoDetector(videoRef.current);
 
   // カメラストリーム開始
@@ -61,18 +60,14 @@ export const CameraWithMarkerDetection: React.FC<CameraWithMarkerDetectionProps>
     }
   }, [detectedMarkers, onMarkersDetected]);
 
-  // マーカー検出オプション更新
-  React.useEffect(() => {
-    const options: MarkerDetectionOptions = {
-      enabled: markerDetectionEnabled,
-      sensitivity: 0.5,
-      frameRate: 15,
-      ...markerDetectionOptions,
-    };
-    updateOptions(options);
-  }, [markerDetectionEnabled, markerDetectionOptions, updateOptions]);
-
   const error = streamError || detectionError;
+
+  // 手動検出の実行
+  const handleManualDetection = () => {
+    if (markerDetectionEnabled && !isDetecting) {
+      startDetection();
+    }
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -113,12 +108,25 @@ export const CameraWithMarkerDetection: React.FC<CameraWithMarkerDetectionProps>
 
       {/* 検出状況インジケーター */}
       {markerDetectionEnabled && isStreaming && (
-        <div className="absolute bottom-2 left-2">
+        <div className="absolute bottom-2 left-2 space-y-2">
           <div className={`px-2 py-1 rounded text-xs text-white ${
             isDetecting ? 'bg-green-500' : 'bg-gray-500'
           }`}>
             {isDetecting ? 'マーカー検出中' : 'マーカー検出待機'}
           </div>
+          
+          {/* 手動検出ボタン */}
+          <button
+            onClick={handleManualDetection}
+            disabled={isDetecting}
+            className={`px-3 py-1 rounded text-xs font-medium ${
+              isDetecting 
+                ? 'bg-gray-400 text-gray-700 cursor-not-allowed' 
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {isDetecting ? '検出中...' : 'マーカー検出実行'}
+          </button>
         </div>
       )}
     </div>

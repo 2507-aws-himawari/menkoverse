@@ -24,7 +24,7 @@ export default function DecksPage() {
       <div>
         <h1>デッキ管理</h1>
         <p>デッキの読み込みに失敗しました</p>
-        <button onClick={() => router.push('/home')}>ホームに戻る</button>
+        <Footer />
       </div>
     );
   }
@@ -33,8 +33,8 @@ export default function DecksPage() {
     <div>
       <h1>デッキ管理</h1>
       <div>
-        <button onClick={() => router.push('/home')}>ホームに戻る</button>
         <CreateDeckForm onDeckCreated={handleDeckCreated} />
+        <Footer />
       </div>
 
       <div style={{ marginTop: '20px' }}>

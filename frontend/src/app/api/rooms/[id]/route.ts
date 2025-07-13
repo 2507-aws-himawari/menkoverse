@@ -4,10 +4,10 @@ import { getRoomById, deleteRoom } from '@/lib/dynamodb-client';
 // GET /api/rooms/[id] - 個別ルーム取得
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const roomId = params.id;
+    const { id: roomId } = await params;
     
     if (!roomId) {
       return NextResponse.json(
@@ -41,10 +41,10 @@ export async function GET(
 // DELETE /api/rooms/[id] - ルーム削除
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const roomId = params.id;
+    const { id: roomId } = await params;
     
     if (!roomId) {
       return NextResponse.json(
