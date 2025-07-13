@@ -31,3 +31,12 @@ export interface JoinRoomResponse {
   roomId: string;
   playerId: string;
 }
+
+// 部屋の参加者情報
+export interface RoomMember {
+  playerId: string;
+  userId: string;
+  roomId: string;
+  joinedAt: number;
+  isActive: boolean;
+}
