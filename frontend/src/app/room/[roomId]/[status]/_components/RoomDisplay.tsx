@@ -274,7 +274,6 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                     <div>
                         <h2>プレイヤー待機中</h2>
                         <div>
-                            <p>参加者: {roomPlayers.length}/2</p>
                             {roomPlayers.length < 2 && (
                                 <p>もう1人のプレイヤーを待っています...</p>
                             )}
