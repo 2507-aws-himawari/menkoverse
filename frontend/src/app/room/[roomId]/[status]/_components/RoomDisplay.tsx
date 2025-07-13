@@ -32,6 +32,7 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     // 参加者管理のためのstate
     const [roomMembers, setRoomMembers] = useState<RoomMember[]>([]);
     const [membersLoading, setMembersLoading] = useState(false);
+    const [showMembersInfo, setShowMembersInfo] = useState(false);
 
     // 参加者一覧を取得する関数
     const fetchRoomMembers = async () => {
@@ -275,39 +276,75 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                                         <p className="text-sm text-yellow-300">もう1人のプレイヤーを待っています...</p>
                                     )}
 
-                                                                {/* リアルタイム参加者同期情報 */}
-                            {room.status === 'waiting' && (
-                                <div style={{ 
-                                    marginTop: '10px',
-                                    padding: '10px',
-                                    backgroundColor: '#f8f9fa',
-                                    borderRadius: '4px',
-                                    fontSize: '14px'
-                                }}>
-                                    <h3>リアルタイム参加者情報</h3>
-                                    {membersLoading ? (
-                                        <p>参加者情報を読み込み中...</p>
-                                    ) : (
-                                        <div>
-                                            <p>接続中の参加者: {roomMembers.length}人</p>
-                                            {roomMembers.map((member, index) => {
-                                                const user = mockUsers.find(u => u.id === member.userId);
-                                                return (
-                                                    <div key={member.playerId} style={{ margin: '5px 0' }}>
-                                                        • {user?.name || member.userId} 
-                                                        <span style={{ color: '#666', fontSize: '12px' }}>
-                                                            （{new Date(member.joinedAt).toLocaleTimeString()}参加）
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
-                                            {roomMembers.length === 0 && (
-                                                <p style={{ color: '#666' }}>まだ参加者がいません</p>
-                                            )}
+                                    {/* リアルタイム参加者情報 */}
+                                    <div className="mt-4 bg-slate-800/50 backdrop-blur-sm rounded-lg p-3 border border-white/10">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-xs font-semibold text-white flex items-center gap-2">
+                                                <span className="text-blue-400">👥</span>
+                                                参加者情報
+                                            </h3>
+                                            <button
+                                                onClick={() => setShowMembersInfo(!showMembersInfo)}
+                                                className="p-1 hover:bg-white/10 rounded-full transition-colors duration-200"
+                                            >
+                                                <span className={`text-white transition-transform duration-200 text-xs ${showMembersInfo ? 'rotate-180' : ''}`}>
+                                                    ▼
+                                                </span>
+                                            </button>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                        
+                                        {showMembersInfo && (
+                                            <div className="max-h-32 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
+                                                {membersLoading ? (
+                                                    <div className="flex items-center gap-2 text-gray-400">
+                                                        <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                                                        <span className="text-xs">読み込み中...</span>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                                            <span className="text-xs text-green-300 font-medium">
+                                                                接続中: {roomMembers.length}人
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {roomMembers.length > 0 ? (
+                                                            <div className="space-y-1">
+                                                                {roomMembers.map((member, index) => {
+                                                                    const user = mockUsers.find(u => u.id === member.userId);
+                                                                    return (
+                                                                        <div 
+                                                                            key={member.playerId} 
+                                                                            className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-white/5"
+                                                                        >
+                                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                                <div className="w-1.5 h-1.5 bg-green-400 rounded-full flex-shrink-0"></div>
+                                                                                <span className="text-xs text-white font-medium truncate">
+                                                                                    {user?.name || member.userId}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                                                                                {new Date(member.joinedAt).toLocaleTimeString('ja-JP', { 
+                                                                                    hour: '2-digit', 
+                                                                                    minute: '2-digit' 
+                                                                                })}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        ) : (
+                                                            <div className="text-center py-3">
+                                                                <div className="text-lg mb-1">🔍</div>
+                                                                <p className="text-xs text-gray-400">参加者なし</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
 
                                     {/* 現在のユーザーのデッキ選択 */}
                                     {(() => {
