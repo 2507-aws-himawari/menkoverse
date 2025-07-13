@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
-import type { CreateRoomRequest, CreateRoomResponse, JoinRoomRequest, JoinRoomResponse } from '@/types/game';
-import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
+import type { CreateRoomRequest, CreateRoomResponse, JoinRoomRequest, JoinRoomResponse, RoomMember } from '@/types/game';
+import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom, getMockRoomMembers, addMockRoomMember } from './mock-data';
 
 // DynamoDB client configuration
 const client = new DynamoDBClient({
@@ -252,6 +252,15 @@ export async function joinRoom(roomId: string, request: JoinRoomRequest): Promis
       throw new Error(`この部屋は参加できません (状態: ${mockRoom.status})`);
     }
 
+    // モック環境でも参加者データを管理
+    addMockRoomMember({
+      playerId: request.playerId,
+      userId: request.userId,
+      roomId,
+      joinedAt: Date.now(),
+      isActive: true
+    });
+
     // モックデータでは簡単な検証のみ実装
     return {
       success: true,
@@ -305,4 +314,41 @@ export async function joinRoom(roomId: string, request: JoinRoomRequest): Promis
   }
 }
 
-export { mockRooms };
+// ルームの参加者取得（最小限実装）
+export async function getRoomMembers(roomId: string): Promise<RoomMember[]> {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, using mock data for room members');
+    return getMockRoomMembers(roomId);
+  }
+
+  try {
+    const response = await docClient.send(new ScanCommand({
+      TableName: getTableName(),
+      FilterExpression: '#pk = :roomPk AND begins_with(#sk, :playerPrefix)',
+      ExpressionAttributeNames: {
+        '#pk': 'PK',
+        '#sk': 'SK',
+      },
+      ExpressionAttributeValues: {
+        ':roomPk': `ROOM#${roomId}`,
+        ':playerPrefix': 'PLAYER#',
+      },
+    }));
+
+    const members = (response.Items || []).map((item: any) => ({
+      playerId: item.playerId,
+      userId: item.userId,
+      roomId: item.roomId,
+      joinedAt: item.joinedAt,
+      isActive: item.isActive || true,
+    }));
+
+    console.log(`Found ${members.length} members in room ${roomId}`);
+    return members;
+  } catch (error) {
+    console.error('Error getting room members:', error);
+    console.log('Falling back to mock data');
+    return getMockRoomMembers(roomId);
+  }
+}

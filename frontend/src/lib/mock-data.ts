@@ -83,3 +83,27 @@ export function updateMockRoom(roomId: string, updates: any) {
 export function getMockRoom(roomId: string) {
   return mockRooms.find(r => r.id === roomId);
 }
+
+// 部屋の参加者データをモックで管理
+let mockRoomMembers: any[] = [];
+
+// モック環境での参加者取得
+export function getMockRoomMembers(roomId: string) {
+  return mockRoomMembers.filter(member => member.roomId === roomId && member.isActive);
+}
+
+// モック環境での参加者追加
+export function addMockRoomMember(member: any) {
+  // 既存の参加者をチェック
+  const existingIndex = mockRoomMembers.findIndex(
+    m => m.roomId === member.roomId && m.userId === member.userId
+  );
+  
+  if (existingIndex !== -1) {
+    // 既存の参加者を更新
+    mockRoomMembers[existingIndex] = { ...mockRoomMembers[existingIndex], ...member };
+  } else {
+    // 新しい参加者を追加
+    mockRoomMembers.push(member);
+  }
+}

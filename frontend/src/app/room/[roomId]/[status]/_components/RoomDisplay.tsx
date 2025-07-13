@@ -3,6 +3,7 @@ import { GAME_CONSTANTS } from '@/lib/constants';
 import { mockUsers, getPlayersByRoomId, getDeckById } from '@/lib/mockData';
 import { mockApi } from '@/lib/mockApi';
 import type { MockRoom, MockRoomPlayer } from '@/lib/types';
+import type { RoomMember } from '@/types/game';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { currentUserAtom } from '@/lib/atoms';
@@ -28,19 +29,51 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     // 固定のplayerIdを使用（再レンダリング時に変わらないように）
     const [stablePlayerId] = useState(() => `player_${currentUser.id}_${Date.now()}`);
 
+    // 参加者管理のためのstate
+    const [roomMembers, setRoomMembers] = useState<RoomMember[]>([]);
+    const [membersLoading, setMembersLoading] = useState(false);
+
+    // 参加者一覧を取得する関数
+    const fetchRoomMembers = async () => {
+        if (room.status !== 'waiting') return; // waiting状態でのみ参加者同期
+        
+        setMembersLoading(true);
+        try {
+            const response = await fetch(`/api/rooms/${encodeURIComponent(room.id)}/members`);
+            if (response.ok) {
+                const data = await response.json();
+                setRoomMembers(data.members || []);
+                console.log('Room members updated:', data.members);
+            } else {
+                console.error('Failed to fetch room members');
+            }
+        } catch (error) {
+            console.error('Error fetching room members:', error);
+        } finally {
+            setMembersLoading(false);
+        }
+    };
+
     // WebSocket接続でプレイヤー参加イベントを監視（接続失敗時は無効化）
     const { playerJoinEvents, isConnected, error } = useGameWebSocket(
         room.id, 
         stablePlayerId
     );
 
+    // 初回ロード時と部屋状態変更時に参加者を取得
+    useEffect(() => {
+        fetchRoomMembers();
+    }, [room.id, room.status]);
+
     // プレイヤー参加イベントを監視してUIを更新
     useEffect(() => {
         if (playerJoinEvents.length > 0) {
             const latestEvent = playerJoinEvents[playerJoinEvents.length - 1];
             console.log('New player joined:', latestEvent);
+            // 参加者リストを再取得
+            fetchRoomMembers();
             // 画面を再描画してプレイヤーリストを更新
-            refreshData();
+            forceUpdate({});
         }
     }, [playerJoinEvents]);
 
@@ -244,6 +277,40 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
                             <p>参加者: {roomPlayers.length}/2</p>
                             {roomPlayers.length < 2 && (
                                 <p>もう1人のプレイヤーを待っています...</p>
+                            )}
+
+                            {/* リアルタイム参加者同期情報 */}
+                            {room.status === 'waiting' && (
+                                <div style={{ 
+                                    marginTop: '10px',
+                                    padding: '10px',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '4px',
+                                    fontSize: '14px'
+                                }}>
+                                    <h3>リアルタイム参加者情報</h3>
+                                    {membersLoading ? (
+                                        <p>参加者情報を読み込み中...</p>
+                                    ) : (
+                                        <div>
+                                            <p>接続中の参加者: {roomMembers.length}人</p>
+                                            {roomMembers.map((member, index) => {
+                                                const user = mockUsers.find(u => u.id === member.userId);
+                                                return (
+                                                    <div key={member.playerId} style={{ margin: '5px 0' }}>
+                                                        • {user?.name || member.userId} 
+                                                        <span style={{ color: '#666', fontSize: '12px' }}>
+                                                            （{new Date(member.joinedAt).toLocaleTimeString()}参加）
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                            {roomMembers.length === 0 && (
+                                                <p style={{ color: '#666' }}>まだ参加者がいません</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             {/* 現在のユーザーのデッキ選択 */}
