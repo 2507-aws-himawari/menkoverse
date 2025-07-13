@@ -1,0 +1,19 @@
+version: 1.0
+runtime: python311
+build:
+  commands:
+    build:
+      - echo "Starting simple test build"
+      - python3 --version
+      - echo "No additional packages needed for simple test"
+      - echo "Build completed"
+run:
+  runtime-version: 3.11
+  command: python3 test_simple.py
+  network:
+    port: 5000
+  env:
+    - name: ENVIRONMENT
+      value: test
+    - name: PYTHONUNBUFFERED
+      value: "1"
