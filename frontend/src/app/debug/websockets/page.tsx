@@ -19,7 +19,8 @@ export default function WebSocketTestPage() {
     gameState,
     error,
     sendMessage: sendWebSocketMessage,
-    getConnectionState
+    getConnectionState,
+    playerJoinEvents
   } = useGameWebSocket(selectedRoom?.id || '', playerId);
 
   const addLog = (message: string) => {

@@ -6,11 +6,12 @@ import type { MockRoom, MockRoomPlayer } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
 import { currentUserAtom } from '@/lib/atoms';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DeckSelector } from './DeckSelector';
 import { HandDisplay } from './HandDisplay';
 import { BoardDisplay } from './BoardDisplay';
 import { useGameActions } from '../_hooks/useGameActions';
+import { useGameWebSocket } from '@/hooks/useGameWebSocket';
 
 interface RoomDisplayProps {
     room: MockRoom;
@@ -23,6 +24,25 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     const [isStartingGame, setIsStartingGame] = useState(false);
     const [, forceUpdate] = useState({});
     const [boardRefreshTrigger, setBoardRefreshTrigger] = useState(0);
+    
+    // 固定のplayerIdを使用（再レンダリング時に変わらないように）
+    const [stablePlayerId] = useState(() => `player_${currentUser.id}_${Date.now()}`);
+
+    // WebSocket接続でプレイヤー参加イベントを監視（接続失敗時は無効化）
+    const { playerJoinEvents, isConnected, error } = useGameWebSocket(
+        room.id, 
+        stablePlayerId
+    );
+
+    // プレイヤー参加イベントを監視してUIを更新
+    useEffect(() => {
+        if (playerJoinEvents.length > 0) {
+            const latestEvent = playerJoinEvents[playerJoinEvents.length - 1];
+            console.log('New player joined:', latestEvent);
+            // 画面を再描画してプレイヤーリストを更新
+            refreshData();
+        }
+    }, [playerJoinEvents]);
 
     const {
         handleSummonFollower: originalHandleSummonFollower,
@@ -107,6 +127,54 @@ export function RoomDisplay({ room }: RoomDisplayProps) {
     return (
         <div>
             <h1>ゲームルーム</h1>
+            
+            {/* WebSocket接続状態表示 */}
+            {error && (
+                <div style={{ 
+                    backgroundColor: '#fff3cd', 
+                    border: '1px solid #ffc107', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#856404'
+                }}>
+                    ⚠️ リアルタイム通知: {error}
+                </div>
+            )}
+            
+            {isConnected && (
+                <div style={{ 
+                    backgroundColor: '#d4edda', 
+                    border: '1px solid #28a745', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#155724'
+                }}>
+                    ✅ リアルタイム通知: 接続中
+                </div>
+            )}
+            
+            {/* プレイヤー参加通知 */}
+            {playerJoinEvents.length > 0 && (
+                <div style={{ 
+                    backgroundColor: '#e8f5e8', 
+                    border: '1px solid #4CAF50', 
+                    padding: '8px', 
+                    margin: '10px 0', 
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                }}>
+                    {playerJoinEvents.map((event, index) => (
+                        <div key={index}>
+                            ✓ プレイヤーが参加しました: {event.userId}
+                        </div>
+                    ))}
+                </div>
+            )}
+            
             <div style={{ fontSize: '20px' }}>ターン: {Turn}</div>
             <div>
                 {roomPlayers.map((player: MockRoomPlayer, index: number) => {

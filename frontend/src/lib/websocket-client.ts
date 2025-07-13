@@ -86,7 +86,14 @@ export class GameWebSocketClient {
   disconnect() {
     console.log('Disconnecting WebSocket');
     if (this.ws) {
-      this.ws.close();
+      // 切断前にWebSocketが接続中かどうかを確認
+      if (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN) {
+        try {
+          this.ws.close();
+        } catch (error) {
+          console.warn('Error closing WebSocket:', error);
+        }
+      }
       this.ws = null;
     }
     this.isConnected = false;
