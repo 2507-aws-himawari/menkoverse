@@ -37,8 +37,8 @@ export function GameControls({
     const roomPlayers = getPlayersByRoomId(room.id);
 
     return (
-        <div>
-            <div>
+        <div className="bg-black/40 backdrop-blur-lg border-t border-white/20">
+            <div className="max-w-4xl mx-auto">
                 {/* アクティブプレイヤーのみに表示される操作 */}
                 {isActiveUser ? (
                     <ActivePlayerControls
@@ -97,12 +97,28 @@ function ActivePlayerControls({
     const opponentPlayer = roomPlayers.find(p => p.userId !== currentUser.id);
 
     return (
-        <div >
+        <div className="flex justify-center p-4">
             <button
                 onClick={onEndTurn}
                 disabled={loading}
+                className="px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-lg rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group min-w-[200px]"
             >
-                {loading ? 'ターン終了中...' : (currentPP === 0 ? 'ターン終了' : 'ターン終了')}
+                <span className="relative z-10 flex items-center justify-center">
+                    {loading ? (
+                        <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                            ターン終了中...
+                        </>
+                    ) : (
+                        <>
+                            <span className="mr-2">⚔️</span>
+                            ターン終了
+                        </>
+                    )}
+                </span>
+                {!loading && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                )}
             </button>
         </div>
     );
@@ -135,61 +151,59 @@ function InactivePlayerControls({
     };
 
     return (
-        <div >
-            <p>相手のターンです。待機してください。</p>
+        <div className="p-4 space-y-4">
+            <div className="text-center">
+                <p className="text-blue-300 text-lg font-semibold mb-2">相手のターンです</p>
+                <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full"></div>
+                    <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full delay-75"></div>
+                    <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full delay-150"></div>
+                    <span className="text-blue-400 text-sm ml-2">待機してください</span>
+                </div>
+            </div>
+            
             {/* デモ用：相手ターン終了ボタン */}
-            <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>デモ用操作</h4>
-                <button
-                    onClick={onForceEndOpponentTurn}
-                    disabled={loading}
-                    style={{
-                        backgroundColor: '#orange',
-                        color: 'red',
-                        padding: '6px 12px',
-                        border: 'none',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        marginRight: '8px'
-                    }}
-                >
-                    {loading ? '相手ターン終了中...' : '相手ターンを終了ボタンデモ用）'}
-                </button>
+            <div className="bg-orange-900/30 backdrop-blur-sm border border-orange-500/50 rounded-lg p-3">
+                <h4 className="text-orange-300 text-sm font-semibold mb-3 flex items-center">
+                    <span className="mr-2">🧪</span>
+                    デモ用操作
+                </h4>
+                <div className="space-y-2">
+                    <button
+                        onClick={onForceEndOpponentTurn}
+                        disabled={loading}
+                        className="w-full py-2 px-4 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold text-sm rounded-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                        {loading ? (
+                            <span className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                相手ターン終了中...
+                            </span>
+                        ) : (
+                            '相手ターンを終了（デモ用）'
+                        )}
+                    </button>
 
-                {/* 相手フィールドにフォロワー召喚デモボタン */}
-                {onSummonFollowerToOpponent && opponentPlayer && (
-                    <>
-                        <button
-                            onClick={() => handleSummonOpponentFollower('card1')}
-                            disabled={loading}
-                            style={{
-                                backgroundColor: '#4CAF50',
-                                color: 'white',
-                                padding: '6px 12px',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                marginRight: '8px'
-                            }}
-                        >
-                            {loading ? '召喚中...' : '相手にゴブリン召喚'}
-                        </button>
-                        <button
-                            onClick={() => handleSummonOpponentFollower('card5')}
-                            disabled={loading}
-                            style={{
-                                backgroundColor: '#9C27B0',
-                                color: 'white',
-                                padding: '6px 12px',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '12px'
-                            }}
-                        >
-                            {loading ? '召喚中...' : '相手にドラゴン召喚'}
-                        </button>
-                    </>
-                )}
+                    {/* 相手フィールドにフォロワー召喚デモボタン */}
+                    {onSummonFollowerToOpponent && opponentPlayer && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={() => handleSummonOpponentFollower('card1')}
+                                disabled={loading}
+                                className="py-2 px-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold text-xs rounded-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                {loading ? '召喚中...' : '相手にゴブリン召喚'}
+                            </button>
+                            <button
+                                onClick={() => handleSummonOpponentFollower('card5')}
+                                disabled={loading}
+                                className="py-2 px-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold text-xs rounded-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                {loading ? '召喚中...' : '相手にドラゴン召喚'}
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
