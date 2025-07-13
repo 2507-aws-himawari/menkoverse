@@ -38,28 +38,57 @@ export function GameControls({
 
     return (
         <div className="bg-black/40 backdrop-blur-lg border-t border-white/20">
-            <div className="max-w-4xl mx-auto">
-                {/* アクティブプレイヤーのみに表示される操作 */}
-                {isActiveUser ? (
-                    <ActivePlayerControls
-                        room={room}
-                        currentUser={currentUser}
-                        loading={loading}
-                        onConsumePP={onConsumePP}
-                        onEndTurn={onEndTurn}
-                        onDamagePlayer={onDamagePlayer}
-                        onDamageToSelf={onDamageToSelf}
-                        onDamageToOpponent={onDamageToOpponent}
-                    />
-                ) : (
-                    <InactivePlayerControls
-                        room={room}
-                        currentUser={currentUser}
-                        activePlayer={activePlayer}
-                        loading={loading}
-                        onForceEndOpponentTurn={onForceEndOpponentTurn}
-                        onSummonFollowerToOpponent={onSummonFollowerToOpponent}
-                    />
+            <div className="flex items-center justify-between p-4">
+                {/* 左側: 状態表示とデモ用操作 */}
+                <div className="flex-1">
+                    {!isActiveUser && (
+                        <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
+                                <p className="text-blue-300 text-lg font-semibold">相手のターンです</p>
+                                <div className="flex items-center space-x-1">
+                                    <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full"></div>
+                                    <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full delay-75"></div>
+                                    <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full delay-150"></div>
+                                </div>
+                            </div>
+                            {/* デモ用ボタンを小さく表示 */}
+                            <button
+                                onClick={onForceEndOpponentTurn}
+                                disabled={loading}
+                                className="py-1 px-3 bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold text-xs rounded-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                                {loading ? 'デモ実行中...' : 'デモ: 相手ターン終了'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+                
+                {/* 右端: ターン終了ボタン */}
+                {isActiveUser && (
+                    <div className="flex-shrink-0">
+                        <button
+                            onClick={onEndTurn}
+                            disabled={loading}
+                            className="px-8 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-base rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group min-w-[200px]"
+                        >
+                            <span className="relative z-10 flex items-center justify-center">
+                                {loading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                                        ターン終了中...
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="mr-2">⚔️</span>
+                                        ターン終了
+                                    </>
+                                )}
+                            </span>
+                            {!loading && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                            )}
+                        </button>
+                    </div>
                 )}
             </div>
         </div>
@@ -101,12 +130,12 @@ function ActivePlayerControls({
             <button
                 onClick={onEndTurn}
                 disabled={loading}
-                className="px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-lg rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group min-w-[200px]"
+                className="px-8 py-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold text-base rounded-lg shadow-lg transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group min-w-[200px]"
             >
                 <span className="relative z-10 flex items-center justify-center">
                     {loading ? (
                         <>
-                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                             ターン終了中...
                         </>
                     ) : (
