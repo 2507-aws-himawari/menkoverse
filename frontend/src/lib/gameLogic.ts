@@ -1,5 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import type { MockRoom, MockRoomPlayer, MockUser, MockBoardCard } from './types';
+import type { MockRoom, MockRoomPlayer, MockRoomPlayerWithStatus, MockUser, MockBoardCard } from './types';
 import { getPlayersByRoomId, getBoardByRoomPlayerId, attackedFollowersThisTurn } from './mockData';
 
 // ユーザー情報取得
@@ -19,28 +19,12 @@ export const calculatePlayerTurn = (room: MockRoom, playerIndex: number): number
 };
 
 // ターン管理の関数
-export const getActivePlayer = (room: MockRoom): MockRoomPlayer | null => {
+export const getActivePlayer = (room: MockRoom): MockRoomPlayerWithStatus | null => {
     const roomPlayers = getPlayersByRoomId(room.id);
     if (roomPlayers.length !== 2) return null;
 
-    const player1 = roomPlayers[0]; // 先攻
-    const player2 = roomPlayers[1]; // 後攻
-
-    if (!player1 || !player2) return null;
-
-    if (player1.turn > player2.turn) {
-        return player1;
-    } else if (player2.turn > player1.turn) {
-        return player2;
-    } else {
-        if (player1.turnStatus === 'active') {
-            return player1;
-        } else if (player2.turnStatus === 'active') {
-            return player2;
-        } else {
-            return player1;
-        }
-    }
+    const playersWithStatus = addTurnStatusToPlayers(roomPlayers, room);
+    return playersWithStatus.find(player => player.turnStatus === 'active') || null;
 };
 
 // 先攻判定
@@ -114,4 +98,34 @@ export const markFollowerAsAttacked = (boardCardId: string): void => {
 // フォロワーが攻撃済みかどうかを判定
 export const hasFollowerAttackedThisTurn = (boardCardId: string): boolean => {
     return attackedFollowersThisTurn.has(boardCardId);
+};
+
+// turnStatusを計算して付与する関数
+export const addTurnStatusToPlayer = (player: MockRoomPlayer, room: MockRoom): MockRoomPlayerWithStatus => {
+    const roomPlayers = getPlayersByRoomId(room.id);
+    if (roomPlayers.length !== 2) {
+        return { ...player, turnStatus: 'ended' };
+    }
+
+    const player1 = roomPlayers[0];
+    const player2 = roomPlayers[1];
+
+    if (!player1 || !player2) {
+        return { ...player, turnStatus: 'ended' };
+    }
+
+    // ターン数による判定
+    if (player1.turn > player2.turn) {
+        return { ...player, turnStatus: player.id === player1.id ? 'active' : 'ended' };
+    } else if (player2.turn > player1.turn) {
+        return { ...player, turnStatus: player.id === player2.id ? 'active' : 'ended' };
+    } else {
+        // 同じターン数の場合は先攻プレイヤー（player1）がアクティブ
+        return { ...player, turnStatus: player.id === player1.id ? 'active' : 'ended' };
+    }
+};
+
+// プレイヤー配列にturnStatusを付与する関数
+export const addTurnStatusToPlayers = (players: MockRoomPlayer[], room: MockRoom): MockRoomPlayerWithStatus[] => {
+    return players.map(player => addTurnStatusToPlayer(player, room));
 };

@@ -6,7 +6,7 @@ import { useAtom } from 'jotai';
 import { useRoomData, useGameActions } from './_hooks';
 import { RoomDisplay, GameControls } from './_components';
 import { setRoomPlayersAtom, clearRoomPlayersAtom } from '@/lib/atoms';
-import { getPlayersByRoomId } from '@/lib/mockData';
+import { getPlayersByRoomId } from '@/lib/dynamodb-client';
 
 export default function RoomStatusPage() {
     const router = useRouter();
@@ -17,11 +17,19 @@ export default function RoomStatusPage() {
 
     // room情報が変更されたらroomPlayersを更新
     useEffect(() => {
-        console.log("uoooo")
         if (room) {
-            const players = getPlayersByRoomId(room.id);
-            setRoomPlayers(players);
-            console.log("Updated Room Players:", players);
+            const loadPlayers = async () => {
+                try {
+                    const players = await getPlayersByRoomId(room.id);
+                    setRoomPlayers(players);
+                    console.log("Updated Room Players:", players);
+                } catch (error) {
+                    console.error("Failed to load players:", error);
+                    // エラー時は空配列をセット
+                    setRoomPlayers([]);
+                }
+            };
+            loadPlayers();
         } else {
             clearRoomPlayers();
         }

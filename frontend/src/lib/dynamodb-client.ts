@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, ScanCommand, DeleteCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 import { fromIni } from '@aws-sdk/credential-providers';
 import type { CreateRoomRequest, CreateRoomResponse, JoinRoomRequest, JoinRoomResponse } from '@/types/game';
 import { checkAWSAvailability, mockRooms, updateMockRoom, getMockRoom } from './mock-data';
@@ -306,6 +306,47 @@ export async function joinRoom(roomId: string, request: JoinRoomRequest): Promis
   } catch (error) {
     console.error('Error joining room:', error);
     throw error;
+  }
+}
+
+// 部屋のプレイヤー一覧取得（最小限実装）
+export async function getPlayersByRoomId(roomId: string) {
+  const awsAvailable = await checkAWSAvailability();
+  if (!awsAvailable) {
+    console.log('AWS not available, returning mock players');
+    // モックデータから取得
+    const { getPlayersByRoomId: getMockPlayers } = await import('./mockData');
+    return getMockPlayers(roomId);
+  }
+
+  try {
+    const response = await docClient.send(new QueryCommand({
+      TableName: getTableName(),
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: {
+        ':pk': `ROOM#${roomId}`,
+        ':sk': 'PLAYER#'
+      }
+    }));
+
+    const players = (response.Items || []).map((item: any) => ({
+      id: item.playerId,
+      roomId: item.roomId,
+      userId: item.userId,
+      hp: item.hp || 20, // デフォルト値
+      pp: item.pp || 0,
+      turn: item.turn || 1,
+      selectedDeckId: item.selectedDeckId || undefined,
+      joinedAt: item.joinedAt || Date.now()
+    }));
+
+    console.log(`Found ${players.length} players for room ${roomId}`);
+    return players;
+  } catch (error) {
+    console.error('Error getting players by room ID:', error);
+    // エラー時はモックデータにフォールバック
+    const { getPlayersByRoomId: getMockPlayers } = await import('./mockData');
+    return getMockPlayers(roomId);
   }
 }
 

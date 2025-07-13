@@ -51,8 +51,13 @@ export interface MockRoomPlayer {
     hp: number;
     pp: number;
     turn: number;
-    turnStatus: 'active' | 'ended';
     selectedDeckId?: string;
+    joinedAt: number;
+}
+
+// 計算プロパティを含む拡張型
+export interface MockRoomPlayerWithStatus extends MockRoomPlayer {
+    turnStatus: 'active' | 'ended';
 }
 
 export interface MockRoom {
