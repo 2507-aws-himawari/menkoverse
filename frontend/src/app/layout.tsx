@@ -26,8 +26,8 @@ export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang="ja" className={`${geist.variable} h-full`}>
-			<body className="h-full landscape-optimized">
+		<html lang="ja" className={`${geist.variable}`}>
+			<body>
 				<SessionProvider>
 					{children}
 				</SessionProvider>
