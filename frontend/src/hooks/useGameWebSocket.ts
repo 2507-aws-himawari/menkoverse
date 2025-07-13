@@ -7,6 +7,7 @@ export function useGameWebSocket(roomId: string, playerId: string) {
   const [gameState, setGameState] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [playerJoinEvents, setPlayerJoinEvents] = useState<any[]>([]);
+  const [gameStartEvent, setGameStartEvent] = useState<any>(null);
   
   const handleMessage = useCallback((data: any) => {
     console.log('Game WebSocket message received:', data);
@@ -15,6 +16,13 @@ export function useGameWebSocket(roomId: string, playerId: string) {
     if (data.type === 'PLAYER_JOINED') {
       console.log('Player joined event:', data);
       setPlayerJoinEvents(prev => [...prev, data]);
+      return;
+    }
+
+    // Handle game start events
+    if (data.type === 'GAME_STARTED') {
+      console.log('Game started event:', data);
+      setGameStartEvent(data);
       return;
     }
     
@@ -105,6 +113,7 @@ export function useGameWebSocket(roomId: string, playerId: string) {
     error,
     sendMessage,
     getConnectionState,
-    playerJoinEvents
+    playerJoinEvents,
+    gameStartEvent
   };
 }
