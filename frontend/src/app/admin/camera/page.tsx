@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { 
-  useCameraDevices, 
+import {
+  useCameraDevices,
   CameraWithMarkerDetection,
   type DetectedMarker,
-  type MarkerDetectionOptions 
+  type MarkerDetectionOptions
 } from '@/features/camera';
 
 export default function CameraDebugPage() {
@@ -50,7 +50,7 @@ export default function CameraDebugPage() {
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold mb-4">カメラ・マーカー検出デバッグ</h2>
-        
+
         {/* カメラ選択 */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
